@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const bcryjpt = require('bcrypt');
+const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
 
 //register function
@@ -12,8 +12,8 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Email này đã được sử dụng'});
         }
 
-        const salt = await bcryjpt.genSalt(10);
-        const hashedPassword = await bcryjpt.hash(password, salt);
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
         const user = await User.create({
             fullName,
@@ -48,7 +48,7 @@ const loginUser = async (req, res) => {
 
         const user = await User.findOne({ email });
 
-        if (user && (await bcryjpt.compare(password, user.password))) {
+        if (user && (await bcrypt.compare(password, user.password))) {
             res.json({
                 _id: user.id,
                 fullName: user.fullName,
@@ -66,7 +66,7 @@ const loginUser = async (req, res) => {
 
 // create token fuction
 const generateToken = (id) => {
-    return jwt.sign({id}, process.env.JWT_SCRET, {
+    return jwt.sign({id}, process.env.JWT_SECRET, {
         expiresIn: '30d',
     });
 };
