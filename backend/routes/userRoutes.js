@@ -8,6 +8,7 @@ router.post('/', registerUser);
 router.post('/login', loginUser);
 
 //ex check token
+
 router.get('/profile', protect, (req, res) => {
   
   res.json({
