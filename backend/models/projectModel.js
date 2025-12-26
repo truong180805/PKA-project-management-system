@@ -1,7 +1,7 @@
-const mongoose = require('mongoos');
-const { applyTimestamps } = require('./userModel');
+const mongoose = require('mongoose');
+const { applyTimestamps } = require('../models/userModel');
 
-const projectSchema = new mongoose({
+const projectSchema = new mongoose.Schema({
     name: { type: String, required: true},
     description: { type: String },
 

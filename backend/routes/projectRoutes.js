@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router;
+const router = express.Router();
 const { createProject, getProjects, findProjectById } = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
