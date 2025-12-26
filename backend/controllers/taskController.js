@@ -11,15 +11,15 @@ const createTask = async (req, res) => {
             res.status('404').json({message: 'Không tìm thấy đồ án'});
         }
 
-        const isMember = project.member.some(memberId => memberId.toString() === req.user._id.toString());
-        const isMentor = project.mentor && project.metor.toString() == req.user._id.toString();
+        const isMember = project.members.some(memberId => memberId.toString() === req.user._id.toString());
+        const isMentor = project.mentor && project.mentor.toString() == req.user._id.toString();
 
-        if (!isMember && !Mentor) {
+        if (!isMember && !isMentor) {
             res.status(403).json({message: 'Bạn không phải thành viên của nhóm này'});
         }
         const task = await Task.create({
             project: projectId, title, description,
-            assignedTo: assigentTo || req.user._id,dueDate,
+            assignedTo: assignedTo || req.user._id,dueDate,
             status: 'todo'
         });
 
@@ -33,7 +33,7 @@ const createTask = async (req, res) => {
         try {
             const { projectId } = req.params;
 
-            const task = await Task.find({project: projectId})
+            const tasks = await Task.find({project: projectId})
                 .populate('assignedTo', 'fullname email studenId');
             
             req.json(tasks);
