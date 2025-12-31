@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
     // login
-    numberPhone: { type: String, required: true, unique: true},
-    fullName: { type: String, required: true},
+    numberPhone: { type: String, sparse: true, unique: true},
     password: { type: String, required: true},
     
-    //later update in profile
-    email: { type: String, required: true, unique: true},
+    //user information
+    fullName: { type: String, required: true},
+    email: { type: String, sparse: true, unique: true},
     university: { type: String, required: true, default: 'Phenikaa'},
     gender: { type: String, enum: ['Nam', 'Nữ', 'Khác']},
     dateOfBirth: { type: Date},
@@ -16,7 +16,8 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         enum: ['admin', 'lecturer', 'student'], 
-        required: true
+        required: true,
+        default: 'student'
     },
 
     //Student
