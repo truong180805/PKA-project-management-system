@@ -37,8 +37,20 @@ const createClass = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message});
     }
-}
+};
+
+const getMyClasses = async (req, res) => {
+    try{
+        const classes = await Class.find({ lecturer: req.user._id})
+        .sort({ createdAt: -1});
+
+        res.json(classes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports ={
-    createClass
+    createClass,
+    getMyClasses
 };
