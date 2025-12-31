@@ -1,9 +1,15 @@
 const mongoose = require('mongoose');
-const { applyTimestamps } = require('../models/userModel');
 
 const projectSchema = new mongoose.Schema({
     name: { type: String, required: true},
     description: { type: String },
+
+    // connect class
+    class: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Class',
+        required: true
+    },
 
     //member group(student)
     members: [{
@@ -17,10 +23,8 @@ const projectSchema = new mongoose.Schema({
         ref: 'User'
     },
     
-    //mentor(lecturer)
-    mentor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+    isLeaderOnly: { 
+        type: Boolean, default: false 
     },
 
     isStudentProposed: {
@@ -29,13 +33,13 @@ const projectSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['planning', 'pending_approval', 'approved', 'rejected', 'completed'],
-        default: 'planning'
+        enum: ['pending', 'approved', 'rejected', 'completed'],
+        default: 'pending'
     },
     
-    semester: {type: String, required: true},
-    finalScore: { type: Number}
-}, {timestamps: true}
-);
+    repositoryLink: { type: String },
+    lecturerFeedback: { type: String },
+    score: { type: Number}
+}, {timestamps: true});
 
 module.exports = mongoose.model('Project', projectSchema);
