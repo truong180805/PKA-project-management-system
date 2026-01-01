@@ -1,4 +1,4 @@
-const Class = required('../model/classModel');
+const Class = require('../models/classModel');
 
 const generateClassCode = () => {
     return Math.random().toString(36).substring(2,8).toUpperCase();
@@ -19,7 +19,7 @@ const createClass = async (req, res) => {
             codeExists = await Class.findOne({ classCode });
         } while (codeExists);
 
-        const newClass = await Class.creat({
+        const newClass = await Class.create({
             name,
             semester,
             description,
