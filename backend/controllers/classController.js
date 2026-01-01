@@ -69,7 +69,7 @@ const joinClass = async (req, res) => {
         const isJoined = classItem.student.some(
             id => id.equals(studentId)
         );
-        const isPending = classItem.student.some(
+        const isPending = classItem.pendingStudents.some(
             id => id.equals(studentId)
         );
 
@@ -81,11 +81,11 @@ const joinClass = async (req, res) => {
         }
 
         if (classItem.settings.autoApprove) {
-            classItem.students.push(studentId);
+            classItem.student.addToSet(studentId);
             await classItem.save();
             return res.status(200).json({ message: 'Tham gia lớp thành công', status: 'joined'});
         } else {
-            classItem.pendingStudents.push(studentId);
+            classItem.pendingStudents.addToSet(studentId);
             await classItem.save();
             return res.status(200).json({ message: 'Đã gửi yêu cầu tham gia, chờ duyệt', status: 'pending'});
         }
