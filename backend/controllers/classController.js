@@ -94,8 +94,35 @@ const joinClass = async (req, res) => {
     }
 };
 
+const getClassDetails = async (req, res) =>{
+    try{
+        const { id } = req.params;
+
+        const classItem = await Class.findById(id)
+            .populate('lecturer', 'fullName')
+            .populate('studenr', 'fullName numberPhone studentId email')
+            .populate('pending', 'fullName numberPhone studentId email');
+
+        if (!classItem) {
+            return res.status(404).json({ message: 'Lớp không tồn tại'});
+        }
+
+        const isLecturer = classItem.lecturer._id.equals(req.user._id);
+        const isStudent = classItem.student.some(s => s._id.equals(req.user._id));
+
+        if (!isLecturer && !isStudent && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Bạn không có quyền xem lớp này' });
+        }
+
+        res.json(classItem);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports ={
     createClass,
     getMyClasses,
-    joinClass
+    joinClass,
+    getClassDetails
 };
