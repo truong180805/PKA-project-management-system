@@ -7,4 +7,6 @@ router.route('/')
     .post(protect, createClass)
     .get(protect, getMyClasses);
 
+router.post('/join', protect, joinClass);
+
 module.exports = router;
