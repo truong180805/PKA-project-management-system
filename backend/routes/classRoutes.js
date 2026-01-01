@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createClass, getMyClasses } = require('../controllers/classController');
+const { createClass, getMyClasses, joinClass } = require('../controllers/classController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
