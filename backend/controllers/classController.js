@@ -1,5 +1,3 @@
-const { findOne } = require("../models/userModel");
-
 const Class = required('../model/classModel');
 
 const generateClassCode = () => {
