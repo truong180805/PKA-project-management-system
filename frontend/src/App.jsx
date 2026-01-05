@@ -1,13 +1,14 @@
 import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage'
 
 function App() {
   return(
-    <div>
-      <h1>
-        Hệ thông quản lý Đồ án - MERN Stack
-      </h1>
-      <p>frontend đang chạy ổn định!</p>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<Navigate to="/login" />} />
+      {/* <Route path= "dashboard" element={<DashboardPage />} /> */}
+    </Routes>
   );
 }
 
