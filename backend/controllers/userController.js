@@ -5,21 +5,32 @@ const User = require('../models/userModel');
 //register function
 const registerUser = async (req, res) => {
     try{
-        const{ fullName, numberPhone, gender, major, email, password, role, university, studentId, className, department } = req.body;
+        const{ fullName, account, gender, major, password, role, university, studentId, className, department } = req.body;
         
         //check info register
-        if (!numberPhone && !email){
+        if (!account){
             return res.status(400).json({message: 'Vui lòng cung cấp email hoặc số điện thoại'});
         }
         if (!fullName || !password || !role){
             return res.status(400).json({ message: 'Vui lòng nhập đầy đủ thông tin'});
         }
         
-        const query = { $or: [] };
-        if (email) query.$or.push({ email });
-        if (numberPhone) query.$or.push({ numberPhone });
+        const isEmail = /\S+@\S+\.\S+/.test(account);
+        const isPhone = /^[0-9]{9,11}$/.test(account);
 
-        const userExists = await User.findOne(query);
+        if (!isEmail && !isPhone) {
+            return res.status(400).json({ message: 'Email hoặc số điện thoại không hợp lệ' });
+        }
+
+        const email = isEmail ? account : undefined;
+        const numberPhone = isPhone ? account : undefined;
+
+        const userExists = await User.findOne({
+            $or: [
+                email ? { email } : null,
+                numberPhone ? { numberPhone } : null
+            ].filter(Boolean)
+        });
         
         if (userExists) {
         // Báo lỗi cụ thể hơn
