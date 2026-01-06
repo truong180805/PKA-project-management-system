@@ -20,7 +20,7 @@ const LoginPage = () => {
     localStorage.setItem('userInfo', JSON.stringify(data));
     navigate('/dashboard');
     } catch (error) {
-      message.error(error.response?.data?.message || 'Đăng nhập thât ');
+      message.error(error.response?.data?.message || 'Đăng nhập thất bại ');
     } finally {
       setLoading(false);
     }
