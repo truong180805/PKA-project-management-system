@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Tabs, Radio, message, Select, DatePicker } from 'antd';
-import { UserOutlined, LockOutlined, PhoneOutlined, SolutionOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, BankOutlined, SolutionOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 const { TabPane } = Tabs;
@@ -104,6 +104,9 @@ const LoginPage = () => {
                 <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
               </Form.Item>
 
+              <Form.Item name="university" rules={[{ required: true, message: 'Nhập tên trường'}]}>
+                <Input prefix={<BankOutlined />} placeholder="Tên trường học" />
+              </Form.Item>
               {/* Form động: Nếu là Sinh viên hiện mã SV, nếu GV hiện Khoa */}
               <Form.Item noStyle shouldUpdate={(prev, current) => prev.role !== current.role}>
                 {({ getFieldValue }) => 
