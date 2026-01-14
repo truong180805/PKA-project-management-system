@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, List, Typography, Modal, Form, Input, message, Tag, Row,Col, Statistic} from 'antd';
-import { PlusOutlined ,UserOutlined, CopyOutlined, TeamOutlined, UsergroupAddOutlined} from '@ant-design/icons';
+import { Button, Card, List, Typography, Modal, Form, Input, message, Tag, Row,Col, Statistic ,Switch} from 'antd';
+import { PlusOutlined ,CopyOutlined, TeamOutlined, UsergroupAddOutlined} from '@ant-design/icons';
 import api from '../api';
 
 const { Title, Text } = Typography;
@@ -11,7 +11,11 @@ const ClassPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
 //take infor user (lect/stu)
-const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+let userInfo = null;
+try {
+  userInfo = JSON.parse(localStorage.getItem('userInfo'));
+} catch {}
+
 const isLecturer = userInfo?.role === 'lecturer';
 
 //take infor classes
@@ -33,7 +37,15 @@ useEffect(() => {
 
 const handleCreateClass = async (values) =>{
     try{
-        await api.post('/classes', values);
+        const submitData = {
+            name: values.name,
+            semester: values.semester,
+            description: values.description,
+            settings: {
+            autoApprove: values.autoApprove || false
+            }
+        };
+        await api.post('/classes', submitData);
         message.success('Tạo lớp thành công');
         setIsModalOpen(false);
         fetchClasses();
@@ -52,7 +64,7 @@ const handleJoinClass = async (values) => {
             message.info(data.message);
         }
         setIsModalOpen(false);
-        fetchClasses;
+        fetchClasses();
     } catch(error){
         message.error(error.response?.data?.message || 'Không thể tham gia lớp');
     }
@@ -69,12 +81,12 @@ return (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24}}>
             <Title level={2}>Lớp Đồ Án Của Tôi</Title>
             <Button
-            type="primary"
-            icon={isLecturer ? <PlusOutlined/> : <UsergroupAddOutlined/>}
-            size="large"
-            onClick={() => setIsModalOpen(true)}
+                type="primary"
+                icon={isLecturer ? <PlusOutlined/> : <UsergroupAddOutlined/>}
+                size="large"
+                onClick={() => setIsModalOpen(true)}
             >
-                {isLecturer ? 'Taoj Lớp Mới' : 'Tham Gia Lớp'}
+                {isLecturer ? 'Tạo Lớp Mới' : 'Tham Gia Lớp'}
             </Button>
         </div>
 
@@ -92,8 +104,8 @@ return (
                         Truy cập
                     </Button>
                 ]}
-                style={{ borderRadius: 8, overflow: 'hidden'}}
-                styles={{
+                style={{ borderRadius: 8,
+                    overflow: 'hidden',
                     background: '#f0f5ff',
                     borderBottom: '1px solid #d6eff'
                 }}
@@ -105,7 +117,7 @@ return (
                             <Col span={12}>
                                 <Statistic
                                 title="Thành viên"
-                                value={item.students.length}
+                                value={item.students?.length || 0}
                                 prefix={<TeamOutlined/>}
                                 styles={{ 
                                     content:{fontSize: 16}
@@ -115,7 +127,7 @@ return (
                             
                             <Col span={12}>
                                 <div style={{ display: 'flex', flexDirection: 'column'}}>
-                                    <Text Type="secondary" style={{ fontSize: 12}}>
+                                    <Text type="secondary" style={{ fontSize: 12}}>
                                         Mã tham gia
                                     </Text>
 
@@ -130,6 +142,11 @@ return (
                                 </div>
                             </Col>
                         </Row>
+                        {item.settings?.autoApprove && (
+                            <div style={{ marginTop: 8 }}>
+                                <Tag color="success">Tự động duyệt: Bật</Tag>
+                            </div>
+                         )}
                     </div>
                 </Card>
             </List.Item>
@@ -143,7 +160,7 @@ return (
         footer={null}
         >
             {isLecturer ? (
-                <Form onFinish={handleCreateClass} layout="vertical">
+                <Form onFinish={handleCreateClass} layout="vertical" initialValues={{ autoApprove: false}}>
                     <Form.Item name="name" label="Tên lớp" rules={[{ required: true, message: 'Nhập tên lớp'}]}>
                         <Input placeholder="VD: Đồ Án Cơ Sở" />
                     </Form.Item>
@@ -152,6 +169,14 @@ return (
                     </Form.Item>
                     <Form.Item name="description" label="Mô tả">
                         <Input.TextArea placeholder="Thông tin thêm..." />
+                    </Form.Item>
+                    <Form.Item 
+                        name="autoApprove" 
+                        label="Cài đặt tham gia" 
+                        valuePropName="checked" 
+                        extra="Nếu bật, sinh viên nhập đúng mã sẽ vào lớp ngay mà không cần duyệt."
+                    >
+                    <Switch checkedChildren="Tự động duyệt" unCheckedChildren="Cần duyệt thủ công" />
                     </Form.Item>
                         <Button type="primary" htmlType="submit" block>Tạo ngay</Button>
                     </Form>
