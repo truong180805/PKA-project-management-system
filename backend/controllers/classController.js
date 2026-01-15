@@ -50,7 +50,7 @@ const getMyClasses = async (req, res) => {
                 .find({ student: req.user._id })
                 .sort({ createdAt: -1 });
         }
-
+        console.log(`User ${req.user.role} lấy danh sách lớp:`, classes);
         res.json(classes);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -100,8 +100,8 @@ const getClassDetails = async (req, res) =>{
 
         const classItem = await Class.findById(id)
             .populate('lecturer', 'fullName')
-            .populate('studenr', 'fullName numberPhone studentId email')
-            .populate('pending', 'fullName numberPhone studentId email');
+            .populate('student', 'fullName numberPhone studentId email')
+            .populate('pendingStudents', 'fullName numberPhone studentId email');
 
         if (!classItem) {
             return res.status(404).json({ message: 'Lớp không tồn tại'});
@@ -132,7 +132,7 @@ const approveStudent = async (req, res) => {
         }
 
         const isPending = classItem.pendingStudents.some(
-        id => id.equal(studentId)
+        id => id.equals(studentId)
         );
 
         if(classItem.lecturer.toString() !== req.user._id.toString()) {

@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const classSchema = new mongoose.Schema({
-    name: { type: String, require: true },
-    classCode: { type: String, require: true, unique: true },
+    name: { type: String, required: true },
+    classCode: { type: String, required: true, unique: true },
 
     lecturer: {
         type: mongoose.Schema.Types.ObjectId,
@@ -26,7 +26,7 @@ const classSchema = new mongoose.Schema({
     },
 
     semester: { type: String },
-    isActive: { type: Boolean, deafault: true }
+    isActive: { type: Boolean, default: true }
 }, { timestamps: true});
 
 module.exports = mongoose.model('Class', classSchema);
