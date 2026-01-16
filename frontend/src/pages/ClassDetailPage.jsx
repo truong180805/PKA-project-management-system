@@ -94,7 +94,9 @@ const ClassDetailPage = () => {
                         danger
                         size='small'
                         icon={<CloseCircleOutlined />}
-                        ></Button>
+                        >
+                            Từ chối
+                        </Button>
                     </Popconfirm>
                 </div>
             ),
