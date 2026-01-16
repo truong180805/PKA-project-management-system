@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Card, List, Typography, Modal, Form, Input, message, Tag, Row, Col, Statistic, Switch, Empty } from 'antd';
 import { PlusOutlined, CopyOutlined, TeamOutlined, UsergroupAddOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import api from '../api';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -11,6 +12,7 @@ const ClassPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     
     const [form] = Form.useForm();
+    const navigate = useNavigate();
 
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
     const isLecturer = userInfo?.role === 'lecturer';
@@ -104,7 +106,7 @@ const ClassPage = () => {
                             hoverable                          
                             title={<Text strong style={{ fontSize: 16 }}>{item.name || "Lớp (Mất tên)"}</Text>}
                             extra={
-                                <Button type="link" onClick={() => message.info('Chức năng đang phát triển')}>
+                                <Button type="link" onClick={() => navigate(`/classes/${item._id}`)}>
                                     Truy cập
                                 </Button>
                             }
