@@ -13,7 +13,7 @@ const createProject = async (req, res) => {
         }
         
         const existingProject = await Project.findOne({
-            class: classCode,
+            class: classId,
             members: req.user._id
         })
         
@@ -21,7 +21,7 @@ const createProject = async (req, res) => {
             return res.status(400).json({ message: 'Bạn đã tham gia một nhóm trong lớp này rồi'});
         }
 
-        const project = await Project.create({
+        const newProject = await Project.create({
             name,
             description,
             class: classId,
@@ -30,32 +30,20 @@ const createProject = async (req, res) => {
             status: 'pending'
         })
         
-        res.status(201).json(project);
+        res.status(201).json(newProject);
     } catch (error) {
-        res.status(400).json({ message: error.message});
+        res.status(500).json({ message: error.message});
     }
 };
 
 const getProjectsByClass = async (req, res) => {
     try{
-
-        const projects = await Project.find()
-        .populate('leader', 'fullName email studentId')
-        .populate('mentor', 'fullName email');
-
-        res.json(projects);
-    } catch (error){
-        res.status(500).json({message: error.message});
-    }
-};
-
-const findProjectById = async (req, res) => {
-    try{
-        const { classCode } = req.params;
+        const { classId } = req.params;
 
         const projects = await Project.find({ class: classId })
-            .populate('leader', 'fullName')
-            .populate('members', 'fullName studentId avatarUrl');
+        .populate('leader', 'fullName numberPhone')
+        .populate('mentor', 'fullName studentId avatarUrl')
+        .sort({createAt: -1});
 
         res.json(projects);
     } catch (error){
@@ -76,6 +64,14 @@ const joinProject = async (req, res) => {
             return res.status(400).json({ message: 'Bạn đã ở trong nhóm này rồi'});
         }
 
+        const alreadyInGroup = await Project.findOneAndDelete({
+            class: project.class,
+            members: req.user._id
+        })
+        if (alreadyInGroup) {
+        return res.status(400).json({ message: 'Bạn đã có nhóm khác trong lớp này' });
+        }
+
         project.members.push(req.user._id);
         await project.save();
 
@@ -85,9 +81,32 @@ const joinProject = async (req, res) => {
     }
 };
 
+const approveProject = async (req, res) => {
+    try{
+        const { id } = req.params;
+        const { status, feedback } = req.body;
+
+        if (req.user.role !== 'lecturer') {
+            return res.status(403).json({ message: 'Chỉ giảng viên mới được duyệt đề tài'})
+        }
+
+        const project = await Project.findByIdAndUpdate(
+            id,
+            { status, lecturerFeedback: feedback },
+            { new: true }
+        );
+
+        if (!project) return res.status(404).json({ message: 'Nhóm không tồn tại'});
+
+        res.json({ message: `Đã cập nhật trạng thái: ${status}`, project });
+    }catch(error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
 module.exports = {
     createProject,
     getProjectsByClass,
-    findProjectById,
+    approveProject,
     joinProject
 };
