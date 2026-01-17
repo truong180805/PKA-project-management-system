@@ -20,7 +20,8 @@ const projectSchema = new mongoose.Schema({
     //leader
     leader: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        required: true
     },
     
     isLeaderOnly: { 
@@ -37,9 +38,9 @@ const projectSchema = new mongoose.Schema({
         default: 'pending'
     },
     
-    repositoryLink: { type: String },
-    lecturerFeedback: { type: String },
-    score: { type: Number}
+    finalReportUrl: { type: String },
+    lecturerFeedback: { type: String, default: "" },
+    score: { type: Number, default: 0}
 }, {timestamps: true});
 
 module.exports = mongoose.model('Project', projectSchema);
