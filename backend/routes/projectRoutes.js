@@ -1,14 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { createProject, getProjectsByClass, joinProject } = require('../controllers/projectController');
+const { createProject,
+        getProjectsByClass, 
+        joinProject,
+        approveProject
+    } = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.route('/')
-    .post(protect, createProject);
+router.post('/', protect, createProject);
 
-router.route('/join')
-    .get(protect, joinProject);
+router.get('/join', protect, joinProject);
 
 router.route('/class/:classId', protect, getProjectsByClass);
+
+router.put('/:id/approve', protect, approveProject);
 
 module.exports = router;
