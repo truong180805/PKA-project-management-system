@@ -6,6 +6,7 @@ const taskSchema = new mongoose.Schema({
         ref: 'Project',
         required: true
     },
+
     title: { type: String, rquired: true},
     descsription: { type: String },
 
@@ -23,6 +24,7 @@ const taskSchema = new mongoose.Schema({
   },
   
   submissionLink: { type: String },
-  lecturerComment: { type: String }
-}, {timestamps: true}
-); module.exports = mongoose.model('Task', taskSchema);
+  comment: { type: String }
+}, {timestamps: true}); 
+
+module.exports = mongoose.model('Task', taskSchema);
