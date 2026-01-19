@@ -9,9 +9,9 @@ const { protect } = require('../middleware/authMiddleware');
 
 router.post('/', protect, createProject);
 
-router.get('/join', protect, joinProject);
+router.post('/join', protect, joinProject);
 
-router.route('/class/:classId', protect, getProjectsByClass);
+router.get('/class/:classId', protect, getProjectsByClass);
 
 router.put('/:id/approve', protect, approveProject);
 
