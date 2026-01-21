@@ -205,6 +205,16 @@ const ClassDetailPage = () => {
                             )
                         }
                     >
+                        {isMyGroup && (
+                            <Button
+                                type='primary'
+                                block
+                                style={{ marginTop: 12}}
+                                onClick={() => navigate (`/project/${project._id}`)}
+                            >
+                                Vào không gian làm việc
+                            </Button>
+                        )}
                         <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ minHeight: 44 }}>
                             {project.description || "Không có mô tả"}
                         </Paragraph>
