@@ -51,6 +51,21 @@ const getProjectsByClass = async (req, res) => {
     }
 };
 
+const getProjectDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const project = await Project.findById(id)
+            .populate('leader', 'fullName email')
+            .populate('members', 'fullName email studentId avatarUrl');
+
+        if(!project) return res.status(404).json({ message: 'Không tìm thấy nhóm'});
+
+        res.json(project);
+    } catch(error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 const joinProject = async (req, res) => {
     try {
         const { projectId } = req.body;
@@ -108,5 +123,6 @@ module.exports = {
     createProject,
     getProjectsByClass,
     approveProject,
-    joinProject
+    joinProject,
+    getProjectDetails
 };
