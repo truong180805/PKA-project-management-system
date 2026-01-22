@@ -167,7 +167,12 @@ const ClassDetailPage = () => {
     const renderProjects = () => {
         if (projectLoading) return <div style={{textAlign: 'center'}}><Spin /></div>;
 
-        const myProjectId = projects.find(p => p.members.some(m => m._id === userInfo._id))?._id;
+        const myProject = projects.find(
+        p => p.members?.some(m => m._id === userInfo._id)
+        );
+
+        const myProjectId = myProject?._id;
+        const isMyGroup = !!myProject;
 
         return (
             <div>
@@ -210,7 +215,7 @@ const ClassDetailPage = () => {
                                 type='primary'
                                 block
                                 style={{ marginTop: 12}}
-                                onClick={() => navigate (`/project/${project._id}`)}
+                                onClick={() => navigate (`/projects/${project._id}`)}
                             >
                                 Vào không gian làm việc
                             </Button>
@@ -225,7 +230,7 @@ const ClassDetailPage = () => {
                                 <Text>{project.members.length} thành viên</Text>
                             </div>
                             {/* Hiển thị Avatar thành viên */}
-                            <Avatar.Group maxCount={3} size="small">
+                            <Avatar.Group max={{ count: 3}} size="small">
                                 {project.members.map(mem => (
                                     <Tooltip title={mem.fullName} key={mem._id}>
                                         <Avatar style={{ backgroundColor: '#87d068' }}>{mem.fullName.charAt(0)}</Avatar>

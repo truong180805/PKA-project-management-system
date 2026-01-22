@@ -35,7 +35,7 @@ const getTaskByProject = async (req, res) => {
         const tasks = await Task.find({project: projectId})
             .populate('assignedTo', 'fullname avatarUrl');
         
-        req.json(tasks);
+        res.json(tasks);
     } catch(error) {
         res.status(500).json({message: error.message});
     }
