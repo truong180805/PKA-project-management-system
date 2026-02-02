@@ -38,12 +38,19 @@ const MainLayout = () => {
         navigate('/login');
     };
 
-    const userMenu = (
-        <Menu items={[
-        { key: '1', label: 'Hồ sơ cá nhân', icon: <UserOutlined /> },
-        { key: '2', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true, onClick: handleLogout },
-        ]} />
-    );
+    const userMenuItems = [
+        { key: 'profile', label: 'Hồ sơ cá nhân', icon: <UserOutlined /> },
+        { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true },
+    ];
+
+    const handleMenuClick = ({ key }) => {
+        if (key === 'logout') {
+            handleLogout();
+        }
+        if (key === 'profile') {
+            navigate('/profile');
+        }
+    };
 
     const menuItems = [
         {
@@ -103,8 +110,17 @@ const MainLayout = () => {
                 <span style={{ fontWeight: 500 }}>
                 Xin chào, {userInfo?.fullName} ({userInfo?.role === 'student' ? 'Sinh viên' : 'Giảng viên'})
                 </span>
-                <Dropdown overlay={userMenu} placement="bottomRight">
-                <Avatar style={{ backgroundColor: '#1890ff', cursor: 'pointer' }} icon={<UserOutlined />} />
+                <Dropdown
+                    menu={{ items: userMenuItems, onClick: handleMenuClick }}
+                    placement="bottomRight"
+                    trigger={['hover']}
+                >
+                    <span>
+                        <Avatar
+                        style={{ backgroundColor: '#1890ff', cursor: 'pointer' }}
+                        icon={<UserOutlined />}
+                        />
+                    </span>
                 </Dropdown>
             </div>
             </Header>

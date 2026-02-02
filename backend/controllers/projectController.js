@@ -119,10 +119,32 @@ const approveProject = async (req, res) => {
     }
 }
 
+const submitProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { finalReportUrl } = req.body;
+
+    const project = await Project.findById(id);
+    if (!project) return res.status(404).json({ message: 'Nhóm không tồn tại' });
+
+    if (project.leader.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Chỉ nhóm trưởng mới được nộp bài' });
+    }
+
+    project.finalReportUrl = finalReportUrl;
+    await project.save();
+
+    res.json({ message: 'Nộp đồ án thành công', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     createProject,
     getProjectsByClass,
     approveProject,
     joinProject,
-    getProjectDetails
+    getProjectDetails,
+    submitProject
 };

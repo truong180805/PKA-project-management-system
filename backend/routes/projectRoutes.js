@@ -4,7 +4,8 @@ const { createProject,
         getProjectsByClass, 
         joinProject,
         approveProject,
-        getProjectDetails
+        getProjectDetails,
+        submitProject
     } = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -18,4 +19,5 @@ router.get('/:id', protect, getProjectDetails);
 
 router.put('/:id/approve', protect, approveProject);
 
+router.put('/:id/submit', protect, submitProject);
 module.exports = router;

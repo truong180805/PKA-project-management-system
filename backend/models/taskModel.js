@@ -8,7 +8,7 @@ const taskSchema = new mongoose.Schema({
     },
 
     title: { type: String, rquired: true},
-    descsription: { type: String },
+    description: { type: String },
 
     assignedTo: {
         type: mongoose.Schema.Types.ObjectId,

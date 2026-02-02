@@ -41,19 +41,27 @@ const getTaskByProject = async (req, res) => {
     }
 };
 
-const updateTaskStatus = async (req, res) => {
+const updateTask = async (req, res) => {
     try{
         const {id} = req.params;
-        const { status, submissionLink } = req.body;
+        const { title, description, status, submissionLink, assignedTo, dueDate } = req.body;
 
         const task = await Task.findById(id);
-        if (!task) return res.status(404).json({ message: 'Task không tồn tại'});
+        if (!task) return res.status(404).json({ message: 'Task không tồn tại' });
 
+        if (title) task.title = title;
+        if (description) task.description = description;
         if (status) task.status = status;
         if (submissionLink) task.submissionLink = submissionLink;
+        if (assignedTo) task.assignedTo = assignedTo;
+        if (dueDate) task.dueDate = dueDate;
 
         await task.save();
-        res.json(task);
+        
+        // Populate lại thông tin người được gán để trả về frontend hiển thị ngay
+        const updatedTask = await Task.findById(id).populate('assignedTo', 'fullName avatarUrl');
+        
+        res.json(updatedTask);
     } catch(error) {
         res.status(500).json({ message: error.message });
     }
@@ -68,9 +76,32 @@ const deleteTask = async (req, res) => {
     }
 };
 
+const submitProject = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { finalReportUrl } = req.body;
+
+    const project = await Project.findById(id);
+    if (!project) return res.status(404).json({ message: 'Nhóm không tồn tại' });
+
+    // Check quyền Leader
+    if (project.leader.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Chỉ nhóm trưởng mới được nộp bài' });
+    }
+
+    project.finalReportUrl = finalReportUrl;
+    await project.save();
+
+    res.json({ message: 'Nộp đồ án thành công', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     createTask,
     getTaskByProject,
-    updateTaskStatus,
-    deleteTask
+    updateTask,
+    deleteTask,
+    submitProject
 };
