@@ -33,6 +33,8 @@ const getDashboardStats = async (req, res) => {
             //for student
             const totalClasses = await Class.countDocuments({ student: userId });
 
+            const totalProjects = await Project.countDocuments({ members: userId });
+            
             const pendingTasks = await Task.countDocuments({ 
                 assignedTo: userId,
                 status: { $in: ['todo', 'in_progress'] }
