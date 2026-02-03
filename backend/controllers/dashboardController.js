@@ -1,6 +1,6 @@
 const Class = require('../models/classModel');
 const Project = require('../models/projectModel');
-const Task = require('../models/taskmMdel');
+const Task = require('../models/taskModel');
 
 const getDashboardStats = async (req, res) => {
     try {
