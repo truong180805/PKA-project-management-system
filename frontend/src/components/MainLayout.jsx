@@ -39,7 +39,7 @@ const MainLayout = () => {
     };
 
     const userMenuItems = [
-        { key: 'profile', label: 'Hồ sơ cá nhân', icon: <UserOutlined /> },
+        { key: 'profile', label: 'Hồ sơ cá nhân', icon: <UserOutlined /> , onClick: () => navigate('/profile') },
         { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true },
     ];
 

@@ -56,14 +56,11 @@ const registerUser = async (req, res) => {
             }
         }   
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
         const user = await User.create({
             fullName,
             numberPhone,
             email,
-            password: hashedPassword,
+            password,
             role,
             gender,
             university,
@@ -126,6 +123,13 @@ const loginUser = async (req, res) => {
     }
 };
 
+// create token fuction
+const generateToken = (id) => {
+    return jwt.sign({id}, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+    });
+};
+
 const updateUserProfile = async (req, res) => {
   try {
     // Tìm user theo ID trong token
@@ -182,15 +186,6 @@ const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// create token fuction
-const generateToken = (id) => {
-    return jwt.sign({id}, process.env.JWT_SECRET, {
-        expiresIn: '30d',
-    });
-};
-
-
 
 module.exports = {
     registerUser,
