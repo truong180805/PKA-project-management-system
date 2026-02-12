@@ -96,27 +96,35 @@ const getMaterials = async (req, res) => {
 const createTopic = async (req, res) => {
     try {
         const { name, description, classId, maxGroups } = req.body;
-        if (req.user.role !== 'lecturer') return res.status(403).json({ message: 'Không có quyền' });
         
-        const topic = await Topic.create({ name, description, class: classId, maxGroups });
+        // Nếu là GV: Duyệt luôn (approved). Nếu SV: Chờ duyệt (pending)
+        const status = req.user.role === 'lecturer' ? 'approved' : 'pending';
+
+        const topic = await Topic.create({ 
+            name, 
+            description, 
+            class: classId, 
+            maxGroups: maxGroups || 1,
+            createdBy: req.user._id,
+            status: status
+        });
         res.status(201).json(topic);
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
 const getTopics = async (req, res) => {
     try {
-        const list = await Topic.find({ class: req.params.classId }).populate('registeredGroups', 'name');
+        const list = await Topic.find({ class: req.params.classId })
+            .populate('registeredGroups', 'name')
+            .populate('requestQueue', 'name') // Lấy tên nhóm đang chờ
+            .populate('createdBy', 'fullName') // Lấy tên người tạo
+            .sort({ createdAt: -1 });
         res.json(list);
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
 const registerTopic = async (req, res) => {
     try {
-        // Logic: SV chọn đề tài -> Hệ thống tự tạo Project (Nhóm) tương ứng với đề tài đó
-        // HOẶC: Project đã có sẵn, Leader chọn đề tài để gán vào.
-        // Theo flow của bạn: "đề xuất đề tài để giảng viên duyệt" -> có vẻ Project tạo trước.
-        
-        // Cách triển khai: Project Leader chọn Topic
         const { topicId, projectId } = req.body;
         
         const topic = await Topic.findById(topicId);
@@ -124,29 +132,76 @@ const registerTopic = async (req, res) => {
 
         if (!topic || !project) return res.status(404).json({ message: 'Không tìm thấy' });
         
-        if (topic.isFull || topic.registeredGroups.length >= topic.maxGroups) {
-            return res.status(400).json({ message: 'Đề tài này đã đủ số lượng nhóm đăng ký' });
+        // Check trùng
+        if (topic.requestQueue.includes(projectId) || topic.registeredGroups.includes(projectId)) {
+            return res.status(400).json({ message: 'Nhóm đã đăng ký hoặc đang chờ duyệt đề tài này' });
         }
 
-        // Cập nhật
-        topic.registeredGroups.push(projectId);
-        if (topic.registeredGroups.length >= topic.maxGroups) {
-            topic.isFull = true;
-        }
+        // Vào hàng chờ
+        topic.requestQueue.push(projectId);
         await topic.save();
 
-        // Gán tên đề tài vào description của project hoặc tạo trường topicRef trong Project (nếu cần)
-        project.description = `[Đề tài: ${topic.name}] ${project.description || ''}`;
-        await project.save();
-
-        res.json({ message: 'Đăng ký đề tài thành công', topic });
-
+        res.json({ message: 'Đã gửi yêu cầu đăng ký, vui lòng chờ giảng viên duyệt', topic });
     } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const approveTopicProposal = async (req, res) => {
+    try {
+        const { topicId, isApproved } = req.body; // true/false
+        if (req.user.role !== 'lecturer') return res.status(403).json({message: 'Không có quyền'});
+
+        const topic = await Topic.findById(topicId);
+        if(!topic) return res.status(404).json({message: 'Không tìm thấy'});
+
+        if (isApproved) {
+            topic.status = 'approved';
+        } else {
+            // Nếu từ chối thì xóa luôn hoặc set status rejected
+            await Topic.findByIdAndDelete(topicId); 
+            return res.json({ message: 'Đã từ chối và xóa đề xuất' });
+        }
+        await topic.save();
+        res.json({ message: 'Đã duyệt đề tài', topic });
+    } catch (error) { res.status(500).json({message: error.message}); }
+};
+
+const approveTopicRegistration = async (req, res) => {
+    try {
+        const { topicId, projectId, isApproved } = req.body;
+        if (req.user.role !== 'lecturer') return res.status(403).json({message: 'Không có quyền'});
+
+        const topic = await Topic.findById(topicId);
+        if(!topic) return res.status(404).json({message: 'Topic not found'});
+
+        // Xóa khỏi hàng chờ dù duyệt hay từ chối
+        topic.requestQueue = topic.requestQueue.filter(pid => pid.toString() !== projectId);
+
+        if (isApproved) {
+             // Check full
+             if (topic.registeredGroups.length >= topic.maxGroups) {
+                 return res.status(400).json({ message: 'Đề tài đã đầy!' });
+             }
+             
+             topic.registeredGroups.push(projectId);
+             if(topic.registeredGroups.length >= topic.maxGroups) topic.isFull = true;
+             
+             // Cập nhật tên Project theo Topic luôn cho đồng bộ
+             const project = await Project.findById(projectId);
+             project.description = `[Đề tài: ${topic.name}] ${project.description || ''}`;
+             await project.save();
+        }
+
+        await topic.save();
+        res.json({ message: isApproved ? 'Đã duyệt nhóm vào đề tài' : 'Đã từ chối nhóm', topic });
+
+    } catch (error) { res.status(500).json({message: error.message}); }
 };
 
 module.exports = {
     createAssignment, getAssignmentsByClass,
     submitAssignment, getSubmissions, gradeSubmission,
     uploadMaterial, getMaterials,
-    createTopic, getTopics, registerTopic
+    createTopic, getTopics, registerTopic,
+    approveTopicProposal,
+    approveTopicRegistration
 };

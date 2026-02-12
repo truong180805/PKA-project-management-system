@@ -72,7 +72,7 @@ const deleteTask = async (req, res) => {
         await Task.findByIdAndDelete(req.params.id);
         res.json({ message: 'Đã xóa task'});
     } catch (erro) {
-        res.json(500).status({ messag: error.message});
+        res.status(5000).json({ message: error.message});
     }
 };
 

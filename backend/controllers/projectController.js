@@ -79,7 +79,7 @@ const joinProject = async (req, res) => {
             return res.status(400).json({ message: 'Bạn đã ở trong nhóm này rồi'});
         }
 
-        const alreadyInGroup = await Project.findOneAndDelete({
+        const alreadyInGroup = await Project.findOne({
             class: project.class,
             members: req.user._id
         })
@@ -140,11 +140,26 @@ const submitProject = async (req, res) => {
   }
 };
 
+const getMyProjects = async (req, res) => {
+  try {
+    // Tìm các project mà user là thành viên
+    const projects = await Project.find({ members: req.user._id })
+      .populate('class', 'name classCode') // Lấy thêm tên lớp để hiển thị
+      .populate('leader', 'fullName')
+      .sort({ updatedAt: -1 });
+
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     createProject,
     getProjectsByClass,
     approveProject,
     joinProject,
     getProjectDetails,
-    submitProject
+    submitProject,
+    getMyProjects
 };

@@ -8,7 +8,14 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 
-const ProjectPage = () => <h2>Trang do an</h2>;
+import ClassLayout from './components/ClassLayout';
+import ClassStreamPage from './pages/class/ClassStreamPage';
+import ClassPeoplePage from './pages/class/ClassPeoplePage';
+import ClassTopicsPage from './pages/class/ClassTopicsPage';
+import ClassGroupsPage from './pages/class/ClassGroupsPage';
+import ClassAssignmentsPage from './pages/class/ClassAssignmentsPage';
+import ClassMaterialsPage from './pages/class/ClassMaterialsPage';
+import ClassGradesPage from './pages/class/ClassGradesPage';
 
 function App() {
   return(
@@ -16,18 +23,23 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       
       <Route path="/" element={<MainLayout />}>
-
         <Route index element={<Navigate to="dashboard"/>} />
-        
         <Route path="dashboard" element={<DashboardPage/>} />
         <Route path="profile" element= {<ProfilePage/>} />
-        <Route path="classes" element={<ClassPage/>} />
-
-        <Route path="classes/:id" element={<ClassDetailPage />} />
-
-        <Route path="projects" element={<ProjectPage/>} />
         <Route path="projects/:id" element={<ProjectDetailPage/>} />
         <Route path="users" element={<h2>Trang nguoi dung</h2>} />
+
+        <Route path="classes" element={<ClassPage/>} />
+
+        <Route path="classes/:id" element={<ClassLayout />}>
+            <Route index element={<ClassStreamPage />} />       {/* Bảng tin (Mặc định) */}
+            <Route path="people" element={<ClassPeoplePage />} />
+            <Route path="topics" element={<ClassTopicsPage />} />
+            <Route path="groups" element={<ClassGroupsPage />} />
+            <Route path="assignments" element={<ClassAssignmentsPage />} />
+            <Route path="materials" element={<ClassMaterialsPage />} />
+            <Route path="grades" element={<ClassGradesPage />} />
+        </Route>
       </Route>
     </Routes>
   );
