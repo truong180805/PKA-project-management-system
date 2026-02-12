@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Layout, Menu, Typography, Spin, Breadcrumb, message, Button, theme } from 'antd';
 import { Outlet, useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
@@ -30,8 +30,8 @@ const ClassLayout = () => {
   } = theme.useToken();
 
   // --- 1. LẤY THÔNG TIN LỚP ---
-  useEffect(() => {
-    const fetchClassInfo = async () => {
+
+    const fetchClassInfo = useCallback(async () => {
       try {
         const { data } = await api.get(`/classes/${id}`);
         setClassData(data);
@@ -41,9 +41,11 @@ const ClassLayout = () => {
       } finally {
         setLoading(false);
       }
-    };
+    },[id, navigate]);
+
+    useEffect(() => {
     fetchClassInfo();
-  }, [id, navigate]);
+    }, [fetchClassInfo]);
 
   // --- 2. CẤU HÌNH MENU ---
   const menuItems = [
@@ -109,7 +111,7 @@ const ClassLayout = () => {
         >
           {/* Đây là nơi các trang con (Stream, Assignments...) sẽ hiển thị */}
           {/* Truyền classData xuống các con để không phải gọi API lại */}
-          <Outlet context={{ classData }} /> 
+          <Outlet context={{ classData, refetchClass: fetchClassInfo }} /> 
         </Content>
       </Layout>
     </Layout>
