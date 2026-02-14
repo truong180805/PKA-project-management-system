@@ -3,6 +3,7 @@ const Submission = require('../models/submissionModel');
 const Material = require('../models/materialModel');
 const Topic = require('../models/topicModel');
 const Project = require('../models/projectModel');
+const Class = require('../models/classModel');
 
 // --- 1. XỬ LÝ ASSIGNMENT (BÀI TẬP) ---
 const createAssignment = async (req, res) => {
@@ -197,11 +198,81 @@ const approveTopicRegistration = async (req, res) => {
     } catch (error) { res.status(500).json({message: error.message}); }
 };
 
+const getClassGradebook = async (req, res) => {
+    try {
+        const { classId } = req.params;
+
+        const assignments = await Assignment.find({ class: classId })
+            .select('_id title dueDate')
+            .sort({ createdAt: 1 })
+            .lean();
+
+        const classInfo = await Class.findById(classId)
+            .populate('student', 'fullName studentId avatarUrl')
+            .lean();
+
+        if (!classInfo)
+            return res.status(404).json({ message: 'Lớp không tồn tại' });
+
+        const assignmentIds = assignments.map(a => a._id);
+
+        const submissions = await Submission.find({
+            assignment: { $in: assignmentIds }
+        }).lean();
+
+        const submissionMap = {};
+        submissions.forEach(sub => {
+            const key = `${sub.submitter}_${sub.assignment}`;
+            submissionMap[key] = sub;
+        });
+
+        const gradebook = classInfo.student.map(student => {
+            const grades = {};
+            let totalScore = 0;
+            let submittedCount = 0;
+
+            assignments.forEach(assign => {
+                const key = `${student._id}_${assign._id}`;
+                const sub = submissionMap[key];
+
+                grades[assign._id] = {
+                    submitted: !!sub,
+                    score: sub?.score,
+                    feedback: sub?.feedback,
+                    submissionUrl: sub?.submissionUrl
+                };
+
+                if (sub?.score != null) {
+                    totalScore += sub.score;
+                    submittedCount++;
+                }
+            });
+
+            return {
+                _id: student._id,
+                studentId: student.studentId,
+                fullName: student.fullName,
+                avatarUrl: student.avatarUrl,
+                grades,
+                averageScore: submittedCount > 0
+                    ? Number((totalScore / submittedCount).toFixed(1))
+                    : null
+            };
+        });
+
+        res.json({ assignments, students: gradebook });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 module.exports = {
     createAssignment, getAssignmentsByClass,
     submitAssignment, getSubmissions, gradeSubmission,
     uploadMaterial, getMaterials,
     createTopic, getTopics, registerTopic,
     approveTopicProposal,
-    approveTopicRegistration
+    approveTopicRegistration, getClassGradebook
 };

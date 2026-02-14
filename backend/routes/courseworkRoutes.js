@@ -6,7 +6,8 @@ const {
     submitAssignment, getSubmissions, gradeSubmission,
     uploadMaterial, getMaterials,
     createTopic, getTopics, registerTopic,
-    approveTopicProposal, approveTopicRegistration
+    approveTopicProposal, approveTopicRegistration,
+    getClassGradebook
 } = require('../controllers/courseworkController');
 
 // --- ASSIGNMENTS ---
@@ -28,5 +29,7 @@ router.get('/topics/class/:classId', protect, getTopics);
 router.post('/topics/register', protect, registerTopic);
 router.put('/topics/approve-proposal', protect, approveTopicProposal); // Duyệt đề tài
 router.put('/topics/approve-registration', protect, approveTopicRegistration); // Duyệt nhóm
+
+router.get('/grades/class/:classId', protect, getClassGradebook);
 
 module.exports = router;
