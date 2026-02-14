@@ -76,7 +76,7 @@ const MainLayout = () => {
     {
       key: '/calendar',
       icon: <CalendarOutlined />,
-      label: 'Lịch biểu / Deadline',
+      label: 'Lịch biểu',
     },
     {
       key: '/inbox',
@@ -102,9 +102,33 @@ const MainLayout = () => {
       <Sider trigger={null} collapsible collapsed={collapsed} width={240} style={{
         overflow: 'auto', height: '100vh', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 100
       }}>
-        <div style={{ height: 64, margin: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6 }}>
-           {collapsed ? <ProjectOutlined style={{ fontSize: 24, color: '#fff' }} /> : <Text strong style={{ color: '#fff', fontSize: 18 }}>Dev Management</Text>}
+        <div
+          style={{
+            height: 70,
+            margin: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255,255,255,0.08)',
+            borderRadius: 10,
+            textAlign: 'center',
+            padding: '8px 12px',
+          }}
+          >
+          {collapsed ? (
+            <ProjectOutlined style={{ fontSize: 24, color: '#fff' }} />
+          ) : (
+            <div style={{ lineHeight: 1.3 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>
+                Quản lý & Theo dõi
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>
+                 Đồ Án
+              </div>
+            </div>
+          )}
         </div>
+
         
         <Menu
           theme="dark"
