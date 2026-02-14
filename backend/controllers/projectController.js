@@ -154,6 +154,27 @@ const getMyProjects = async (req, res) => {
   }
 };
 
+const getSupervisedProjects = async (req, res) => {
+  try {
+    // 1. Tìm tất cả lớp mà GV này dạy
+    const myClasses = await Class.find({ lecturer: req.user._id }).select('_id');
+    const classIds = myClasses.map(c => c._id);
+
+    // 2. Tìm tất cả Project thuộc các lớp đó
+    const projects = await Project.find({ class: { $in: classIds } })
+      .populate('class', 'name classCode')
+      .populate('leader', 'fullName studentId')
+      .populate('members', 'fullName avatarUrl')
+      .sort({ updatedAt: -1 });
+
+    // (Nâng cao: Có thể tính toán % hoàn thành task ở đây nếu muốn, tạm thời ta trả về list project thô)
+    
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     createProject,
     getProjectsByClass,
@@ -161,5 +182,6 @@ module.exports = {
     joinProject,
     getProjectDetails,
     submitProject,
-    getMyProjects
+    getMyProjects,
+    getSupervisedProjects
 };

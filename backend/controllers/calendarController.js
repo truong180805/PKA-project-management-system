@@ -1,61 +1,59 @@
 const Assignment = require('../models/assignmentModel');
 const Task = require('../models/taskModel');
 const Class = require('../models/classModel');
-const Project = require('../models/projectModel');
 
 const getCalendarEvents = async (req, res) => {
   try {
     const userId = req.user._id;
+    const isLecturer = req.user.role === 'lecturer';
     const events = [];
 
-    // --- 1. LẤY DEADLINE BÀI TẬP (ASSIGNMENTS) ---
-    // Tìm các lớp mà user này là thành viên (SV) hoặc giảng viên (GV)
-    let classIds = [];
-    if (req.user.role === 'lecturer') {
-        const classes = await Class.find({ lecturer: userId }).select('_id');
-        classIds = classes.map(c => c._id);
-    } else {
-        const classes = await Class.find({ student: userId }).select('_id');
-        classIds = classes.map(c => c._id);
-    }
+    // --- 1. LẤY DANH SÁCH LỚP ---
+    let query = isLecturer ? { lecturer: userId } : { student: userId };
+    const classes = await Class.find(query).select('_id name');
+    const classIds = classes.map(c => c._id);
 
+    // --- 2. LẤY DEADLINE BÀI TẬP (ASSIGNMENTS) ---
+    // Cả GV và SV đều cần xem hạn nộp bài tập
     const assignments = await Assignment.find({ class: { $in: classIds } })
         .populate('class', 'name');
 
-    // Format dữ liệu Assignment chuẩn để trả về
     assignments.forEach(ass => {
         events.push({
             id: ass._id,
-            title: `[Bài tập] ${ass.title}`,
+            title: isLecturer ? `[Thu bài] ${ass.title}` : `[Nộp bài] ${ass.title}`, // Đổi tiêu đề cho hợp vai
             start: ass.dueDate,
             end: ass.dueDate,
-            type: 'assignment', // Để frontend tô màu đỏ
+            type: 'assignment',
+            classId: ass.class?._id, // <--- QUAN TRỌNG ĐỂ LỌC
             className: ass.class?.name,
-            description: ass.description
+            description: ass.description,
+            color: '#cf1322' // Màu đỏ cho deadline
         });
     });
 
-    // --- 2. LẤY DEADLINE TASK (CÔNG VIỆC NHÓM) ---
-    // Chỉ lấy task được giao cho chính user này (nếu là SV)
-    // Hoặc task của các nhóm do user này làm Leader (nếu muốn)
-    // Ở đây ta lấy task được giao (assignedTo)
-    const tasks = await Task.find({ assignedTo: userId })
-        .populate('project', 'name');
+    // --- 3. LẤY DEADLINE TASK (CHỈ DÀNH CHO SV) ---
+    // GV thường không quan tâm task nhỏ lẻ của từng nhóm, trừ khi muốn xem chi tiết
+    // Ở đây ta chỉ trả task cho SV để lịch GV đỡ rác
+    if (!isLecturer) {
+        const tasks = await Task.find({ assignedTo: userId })
+            .populate('project', 'name');
 
-    tasks.forEach(task => {
-        if (task.dueDate) { // Chỉ lấy task có hạn chót
-            events.push({
-                id: task._id,
-                title: `[Task] ${task.title}`,
-                start: task.dueDate,
-                end: task.dueDate,
-                type: 'task', // Để frontend tô màu xanh
-                projectName: task.project?.name,
-                description: task.description,
-                status: task.status
-            });
-        }
-    });
+        tasks.forEach(task => {
+            if (task.dueDate) {
+                events.push({
+                    id: task._id,
+                    title: `[Task] ${task.title}`,
+                    start: task.dueDate,
+                    end: task.dueDate,
+                    type: 'task',
+                    projectName: task.project?.name,
+                    description: task.description,
+                    color: '#1890ff' // Màu xanh cho task
+                });
+            }
+        });
+    }
 
     res.json(events);
 

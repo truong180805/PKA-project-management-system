@@ -5,6 +5,7 @@ import MainLayout from './components/MainLayout';
 import ClassPage from './pages/ClassPage';
 import ClassDetailPage from './pages/ClassDetailPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import ProjectsPage from './pages/ProjectsPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import CalendarPage from './pages/calendarPage';
@@ -21,6 +22,7 @@ import ClassAssignmentsPage from './pages/class/ClassAssignmentsPage';
 import ClassMaterialsPage from './pages/class/ClassMaterialsPage';
 import ClassGradesPage from './pages/class/ClassGradesPage';
 
+
 function App() {
   return(
     <Routes>
@@ -35,6 +37,7 @@ function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="support" element={<SupportPage />} />
         <Route path="inbox" element={<InboxPage />} />
+        <Route path="projects" element={<ProjectsPage />} />
 
         <Route path="classes" element={<ClassPage/>} />
 

@@ -6,7 +6,8 @@ const { createProject,
         approveProject,
         getProjectDetails,
         submitProject,
-        getMyProjects
+        getMyProjects,
+        getSupervisedProjects
     } = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -16,6 +17,7 @@ router.post('/join', protect, joinProject);
 
 router.get('/class/:classId', protect, getProjectsByClass);
 router.get('/my-projects', protect, getMyProjects);
+router.get('/supervised', protect, getSupervisedProjects);
 router.get('/:id', protect, getProjectDetails);
 
 

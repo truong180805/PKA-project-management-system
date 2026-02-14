@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Badge, Modal, Typography, Tag, Spin, Card, Row, Col, message } from 'antd';
-import { FileTextOutlined, ProjectOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Calendar, Badge, Modal, Typography, Tag, Spin, Card, Row, Col, message, Select, Button, Alert } from 'antd';
+import { FileTextOutlined, ProjectOutlined, ClockCircleOutlined, FilterOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
 
 const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 const CalendarPage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null); // Để hiện Modal chi tiết
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // State bộ lọc
+  const [filterClass, setFilterClass] = useState('all');
+  
   const navigate = useNavigate();
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const isLecturer = userInfo.role === 'lecturer';
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -29,13 +36,20 @@ const CalendarPage = () => {
     fetchEvents();
   }, []);
 
-  // Hàm helper để lấy list sự kiện của 1 ngày cụ thể
+  // --- LOGIC LỌC SỰ KIỆN ---
+  // Lấy danh sách lớp duy nhất từ events để tạo Dropdown
+  const uniqueClasses = [...new Set(events.filter(e => e.type === 'assignment').map(e => JSON.stringify({id: e.classId, name: e.className})))].map(s => JSON.parse(s));
+
+  const filteredEvents = events.filter(ev => {
+      if (filterClass === 'all') return true;
+      return ev.classId === filterClass;
+  });
+
   const getListData = (value) => {
     const dateString = value.format('YYYY-MM-DD');
-    return events.filter(ev => dayjs(ev.start).format('YYYY-MM-DD') === dateString);
+    return filteredEvents.filter(ev => dayjs(ev.start).format('YYYY-MM-DD') === dateString);
   };
 
-  // Hàm render nội dung trong ô ngày
   const dateCellRender = (value) => {
     const listData = getListData(value);
     return (
@@ -43,9 +57,9 @@ const CalendarPage = () => {
         {listData.map((item) => (
           <li key={item.id} onClick={(e) => { e.stopPropagation(); handleSelectEvent(item); }}>
             <Badge 
-                status={item.type === 'assignment' ? 'error' : 'processing'} 
+                color={item.color}
                 text={
-                    <span style={{ fontSize: 12, color: item.type === 'assignment' ? '#cf1322' : '#1890ff' }}>
+                    <span style={{ fontSize: 12, color: item.color }}>
                         {item.title}
                     </span>
                 } 
@@ -61,12 +75,16 @@ const CalendarPage = () => {
       setIsModalOpen(true);
   };
 
-  // Hàm xử lý khi bấm nút "Đi tới chi tiết" trong Modal
+  // Nút hành động trong Modal
   const handleNavigate = () => {
-      // Logic điều hướng dựa trên loại event. 
-      // Do hiện tại ta chưa lưu ClassID hay ProjectID vào event ở backend một cách đầy đủ cho việc navigate,
-      // nên tạm thời ta chỉ đóng modal hoặc navigate chung chung.
-      // *Gợi ý nâng cấp:* Backend nên trả về classId và projectId trong object event.
+      if (selectedEvent.type === 'assignment') {
+          // Điều hướng đến trang Bài tập của lớp đó
+          navigate(`/classes/${selectedEvent.classId}/assignments`);
+      } else if (selectedEvent.type === 'task') {
+          // Điều hướng về dashboard project (vì task không có project ID rõ ràng trong API calendar này, 
+          // ta có thể update API sau nếu cần link chính xác vào task)
+          navigate('/projects'); 
+      }
       setIsModalOpen(false);
   };
 
@@ -74,47 +92,76 @@ const CalendarPage = () => {
 
   return (
     <div style={{ padding: '0 12px' }}>
-      <Title level={2}>Lịch biểu của tôi</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            <Title level={2} style={{margin: 0}}>{isLecturer ? 'Lịch Giảng Dạy & Deadline' : 'Lịch Học Tập & Deadline'}</Title>
+            <Text type="secondary">Quản lý thời gian và các mốc quan trọng</Text>
+          </div>
+          
+          {/* BỘ LỌC CHO GIẢNG VIÊN */}
+          {isLecturer && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <FilterOutlined />
+                  <Select 
+                      defaultValue="all" 
+                      style={{ width: 250 }} 
+                      onChange={setFilterClass}
+                      placeholder="Lọc theo lớp học"
+                  >
+                      <Option value="all">Hiển thị tất cả các lớp</Option>
+                      {uniqueClasses.map(cls => (
+                          <Option key={cls.id} value={cls.id}>{cls.name}</Option>
+                      ))}
+                  </Select>
+              </div>
+          )}
+      </div>
       
+      {/* CHÚ THÍCH MÀU SẮC */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
-          <Col><Badge status="error" text="Hạn nộp Bài tập" /></Col>
-          <Col><Badge status="processing" text="Hạn chót Task nhóm" /></Col>
+          <Col><Badge color="#cf1322" text="Hạn nộp Bài tập (Assignments)" /></Col>
+          {!isLecturer && <Col><Badge color="#1890ff" text="Công việc cá nhân (Tasks)" /></Col>}
       </Row>
 
-      <Card>
-        <Calendar 
-            dateCellRender={dateCellRender} 
-            // Antd v5 mới dùng cellRender thay vì dateCellRender, nhưng dateCellRender vẫn support
-            // Nếu dùng v5 thuần: cellRender={(current, info) => { if (info.type === 'date') return dateCellRender(current); return info.originNode; }}
-        />
+      <Card styles={{ body: { padding: 0 } }}>
+        <Calendar dateCellRender={dateCellRender} />
       </Card>
 
-      {/* MODAL CHI TIẾT SỰ KIỆN */}
+      {/* MODAL CHI TIẾT */}
       <Modal 
-        title={selectedEvent?.type === 'assignment' ? "Chi tiết Bài tập" : "Chi tiết Công việc"} 
+        title={null}
         open={isModalOpen} 
         onCancel={() => setIsModalOpen(false)}
         footer={[
-            <Tag key="status" color={selectedEvent?.type === 'assignment' ? 'red' : 'blue'}>
-                {selectedEvent?.type === 'assignment' ? 'DEADLINE' : 'TASK'}
-            </Tag>
+            <Button key="close" onClick={() => setIsModalOpen(false)}>Đóng</Button>,
+            <Button key="go" type="primary" onClick={handleNavigate}>
+                {isLecturer ? 'Đến trang Chấm điểm' : 'Đi đến Nộp bài'} <ArrowRightOutlined />
+            </Button>
         ]}
       >
           {selectedEvent && (
               <div>
-                  <Title level={5}>{selectedEvent.title}</Title>
-                  <div style={{ marginBottom: 12 }}>
-                    <ClockCircleOutlined /> Hạn: <strong>{dayjs(selectedEvent.start).format('DD/MM/YYYY HH:mm')}</strong>
+                  <div style={{ borderLeft: `4px solid ${selectedEvent.color}`, paddingLeft: 12, marginBottom: 16 }}>
+                      <Title level={4} style={{ margin: 0 }}>{selectedEvent.title}</Title>
+                      <Text type="secondary">{dayjs(selectedEvent.start).format('DD tháng MM, YYYY - HH:mm')}</Text>
                   </div>
                   
                   {selectedEvent.className && (
-                      <div style={{ marginBottom: 8 }}><FileTextOutlined /> Lớp: {selectedEvent.className}</div>
-                  )}
-                  {selectedEvent.projectName && (
-                      <div style={{ marginBottom: 8 }}><ProjectOutlined /> Dự án: {selectedEvent.projectName}</div>
+                      <Alert 
+                        message={`Lớp: ${selectedEvent.className}`} 
+                        type="info" 
+                        showIcon 
+                        style={{ marginBottom: 16 }} 
+                      />
                   )}
 
-                  <Card size="small" style={{ background: '#f5f5f5' }}>
+                  {selectedEvent.projectName && (
+                      <div style={{ marginBottom: 8 }}>
+                          <ProjectOutlined /> Dự án: <Text strong>{selectedEvent.projectName}</Text>
+                      </div>
+                  )}
+
+                  <Card size="small" type="inner" title="Mô tả / Ghi chú">
                       <Paragraph style={{ marginBottom: 0 }}>
                           {selectedEvent.description || "Không có mô tả chi tiết."}
                       </Paragraph>
