@@ -4,6 +4,7 @@ const Material = require('../models/materialModel');
 const Topic = require('../models/topicModel');
 const Project = require('../models/projectModel');
 const Class = require('../models/classModel');
+const Notification = require('../models/notificationModel');
 
 // --- 1. XỬ LÝ ASSIGNMENT (BÀI TẬP) ---
 const createAssignment = async (req, res) => {
@@ -69,7 +70,18 @@ const gradeSubmission = async (req, res) => { // GV chấm điểm
 
         const sub = await Submission.findByIdAndUpdate(submissionId, {
             score, feedback, gradedAt: new Date()
-        }, { new: true });
+        }, { new: true }).populate('assignment', 'title class');
+
+        const newNotif = await Notification.create({
+            recipient: sub.submitter, // Gửi cho sinh viên nộp bài
+            sender: req.user._id,
+            type: 'grade',
+            message: `Giảng viên đã chấm điểm bài tập: ${sub.assignment.title}`,
+            link: `/classes/${sub.assignment.class}/grades` // Link đến trang điểm số
+        });
+
+        const io = req.app.get('io');
+        io.to(sub.submitter.toString()).emit('receive_notification', newNotif);
         
         res.json(sub);
     } catch (error) { res.status(500).json({ message: error.message }); }

@@ -14,6 +14,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const courseworkRoutes = require('./routes/courseworkRoutes');
 const calendarRoutes = require('./routes/calendarRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 dotenv.config();
 connectDB();
@@ -23,10 +24,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // URL của Frontend (Vite mặc định là port này)
+    origin: "http://localhost:5173", 
     methods: ["GET", "POST"]
   }
 });
+
+app.set('io', io);
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
@@ -56,6 +59,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/coursework', courseworkRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 5000;
 

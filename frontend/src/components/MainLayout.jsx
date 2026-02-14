@@ -1,23 +1,99 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Button, theme, Avatar, Dropdown, Typography, Space, Badge } from 'antd';
+import React, { useState, useEffect} from 'react';
+import { Layout, Menu, Button, theme, Avatar, Dropdown, Typography, Space, Badge, notification} from 'antd';
 import { 
   MenuFoldOutlined, MenuUnfoldOutlined, 
   DashboardOutlined, ReadOutlined, 
   ProjectOutlined, CalendarOutlined, 
   MessageOutlined, SettingOutlined, 
   QuestionCircleOutlined, UserOutlined, 
-  LogoutOutlined, PieChartOutlined 
+  LogoutOutlined, PieChartOutlined,
+  BellOutlined, CheckCircleOutlined
 } from '@ant-design/icons';
+import io from 'socket.io-client';
+import api from '../api';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
+const socket = io.connect("http://localhost:5000");
+
+dayjs.extend(relativeTime);
+
+const NotificationList = ({ notifications, onRead }) => (
+    <div style={{ width: 300, maxHeight: 400, overflowY: 'auto', background: '#fff', boxShadow: '0 3px 6px -4px rgba(0,0,0,0.12)' }}>
+        <div style={{ padding: '8px 16px', borderBottom: '1px solid #f0f0f0', fontWeight: 'bold' }}>Thông báo</div>
+        {notifications.length === 0 ? <div style={{padding: 20, textAlign: 'center', color: '#999'}}>Không có thông báo mới</div> : (
+            <Menu items={notifications.map(notif => ({
+                key: notif._id,
+                label: (
+                    <div onClick={() => onRead(notif)} style={{ opacity: notif.isRead ? 0.6 : 1 }}>
+                        <div style={{ fontWeight: notif.isRead ? 'normal' : 'bold', fontSize: 13 }}>{notif.message}</div>
+                        <div style={{ fontSize: 10, color: '#aaa' }}>{dayjs(notif.createdAt).fromNow()}</div>
+                    </div>
+                ),
+                icon: notif.type === 'grade' ? <CheckCircleOutlined style={{color: 'green'}} /> : <BellOutlined />
+            }))} />
+        )}
+    </div>
+);
 
 const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
+  useEffect(() => {
+    const fetchNotifs = async () => {
+        try {
+            const { data } = await api.get('/notifications');
+            setNotifications(data);
+            setUnreadCount(data.filter(n => !n.isRead).length);
+        } catch (e) { console.error(e); }
+    };
+    fetchNotifs();
+
+    // SOCKET: Join room riêng của mình để nhận thông báo cá nhân
+    if (userInfo._id) {
+        socket.emit('join_user_room', userInfo._id);
+    }
+
+    // SOCKET: Lắng nghe thông báo mới
+    socket.on('receive_notification', (newNotif) => {
+        // Play sound (Optional)
+        // const audio = new Audio('/notification-sound.mp3'); audio.play();
+        
+        setNotifications(prev => [newNotif, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        
+        // Show Antd notification toast
+        notification.open({
+            message: 'Thông báo mới',
+            description: newNotif.message,
+            icon: <BellOutlined style={{ color: '#108ee9' }} />,
+            onClick: () => { navigate(newNotif.link); }
+        });
+    });
+
+    return () => {
+        socket.off('receive_notification');
+    };
+  }, []);
+
+  const handleReadNotif = async (notif) => {
+      if (!notif.isRead) {
+          try {
+              await api.put(`/notifications/${notif._id}/read`);
+              setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
+              setUnreadCount(prev => Math.max(0, prev - 1));
+          } catch (e) {}
+      }
+      if (notif.link) navigate(notif.link);
+  };
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -142,19 +218,18 @@ const MainLayout = () => {
       {/* MAIN CONTENT AREA */}
       <Layout style={{ marginLeft: collapsed ? 80 : 240, transition: 'all 0.2s' }}>
         <Header
-          style={{
-            padding: '0 24px',
-            background: colorBgContainer,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: 64,
-            position: 'sticky',
-            top: 0,
-            zIndex: 99,
-            boxShadow: '0 2px 8px #f0f1f2'
-          }}
-        >
+            style={{
+              padding: '0 24px',
+              background: colorBgContainer,
+              display: 'flex',
+              alignItems: 'center',
+              height: 64,
+              position: 'sticky',
+              top: 0,
+              zIndex: 99,
+              boxShadow: '0 2px 8px #f0f1f2'
+            }}
+         >
 
           
           {/* Nút Toggle Sidebar */}
@@ -165,40 +240,70 @@ const MainLayout = () => {
             style={{ fontSize: '16px', width: 64, height: 64 }}
           />
 
-          {/* User Info & Avatar */}
-          <Dropdown menu={{ items: userMenu.items }} placement="bottomRight">
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                cursor: 'pointer'
-              }}
+          <div
+            style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16
+            }}
             >
+            
+            {/* Bell */}
+            <Dropdown 
+              dropdownRender={() => 
+                <NotificationList 
+                  notifications={notifications} 
+                  onRead={handleReadNotif} 
+                />} 
+              trigger={['click']}
+              placement="bottomRight"
+            >
+              <Badge count={unreadCount} overflowCount={9} size="small">
+                <Button 
+                  type="text" 
+                  shape="circle" 
+                  icon={<BellOutlined style={{ fontSize: 20 }} />} 
+                />
+              </Badge>
+            </Dropdown>
+
+            {/* User */}
+            <Dropdown menu={{ items: userMenu.items }} placement="bottomRight">
               <div
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  lineHeight: 1.2
+                  alignItems: 'center',
+                  gap: 12,
+                  cursor: 'pointer'
                 }}
               >
-                <span style={{ fontWeight: 600 }}>
-                  {userInfo?.fullName || 'Người dùng'}
-                </span>
-                <span style={{ fontSize: 12, color: '#888' }}>
-                  {isLecturer ? 'Giảng viên' : 'Sinh viên'}
-                </span>
-              </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    lineHeight: 1.2
+                  }}
+                >
+                  <span style={{ fontWeight: 600 }}>
+                    {userInfo?.fullName || 'Người dùng'}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#888' }}>
+                    {isLecturer ? 'Giảng viên' : 'Sinh viên'}
+                  </span>
+                </div>
 
-              <Avatar
-                size={40}
-                src={userInfo?.avatarUrl}
-                icon={<UserOutlined />}
-                style={{ backgroundColor: '#1890ff' }}
-              />
-            </div>
-          </Dropdown>
+                <Avatar
+                  size={40}
+                  src={userInfo?.avatarUrl}
+                  icon={<UserOutlined />}
+                  style={{ backgroundColor: '#1890ff' }}
+                />
+              </div>
+            </Dropdown>
+
+          </div>
 
         </Header>
         
