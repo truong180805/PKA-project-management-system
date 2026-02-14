@@ -7,6 +7,10 @@ import ClassDetailPage from './pages/ClassDetailPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
+import CalendarPage from './pages/calendarPage';
+import SettingsPage from './pages/SettingsPage';
+import SupportPage from './pages/SupportPage';
+import InboxPage from './pages/InboxPage';
 
 import ClassLayout from './components/ClassLayout';
 import ClassStreamPage from './pages/class/ClassStreamPage';
@@ -27,7 +31,10 @@ function App() {
         <Route path="dashboard" element={<DashboardPage/>} />
         <Route path="profile" element= {<ProfilePage/>} />
         <Route path="projects/:id" element={<ProjectDetailPage/>} />
-        <Route path="users" element={<h2>Trang nguoi dung</h2>} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="support" element={<SupportPage />} />
+        <Route path="inbox" element={<InboxPage />} />
 
         <Route path="classes" element={<ClassPage/>} />
 

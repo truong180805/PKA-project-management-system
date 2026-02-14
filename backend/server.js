@@ -10,6 +10,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const classRoutes = require('./routes/classRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const courseworkRoutes = require('./routes/courseworkRoutes');
+const calendarRoutes = require('./routes/calendarRoutes');
 
 dotenv.config();
 connectDB();
@@ -25,6 +26,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/coursework', courseworkRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 const PORT = process.env.PORT || 5000;
 

@@ -1,138 +1,199 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Button, theme } from 'antd';
-import {
-    UserOutlined,
-    LogoutOutlined,
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
-    ProjectOutlined,
-    TeamOutlined,
-    HomeOutlined,
-    ReadOutlined
+import React, { useState } from 'react';
+import { Layout, Menu, Button, theme, Avatar, Dropdown, Typography, Space, Badge } from 'antd';
+import { 
+  MenuFoldOutlined, MenuUnfoldOutlined, 
+  DashboardOutlined, ReadOutlined, 
+  ProjectOutlined, CalendarOutlined, 
+  MessageOutlined, SettingOutlined, 
+  QuestionCircleOutlined, UserOutlined, 
+  LogoutOutlined, PieChartOutlined 
 } from '@ant-design/icons';
-import { useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
+const { Text } = Typography;
 
 const MainLayout = () => {
-    const [collapsed, setCollapsed] = useState(false);
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [userInfo, setUserInfo] = useState(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
 
-    const {
-        token: { colorBgContainer, borderRadiusLG },
-    } = theme.useToken();
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const isLecturer = userInfo.role === 'lecturer';
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem('userInfo');
-        if (!storedUser) {
-        navigate('/login');
-        } else {
-        setUserInfo(JSON.parse(storedUser));
-        }
-    }, [navigate]);
+  // --- XỬ LÝ ĐĂNG XUẤT ---
+  const handleLogout = () => {
+    localStorage.removeItem('userInfo');
+    navigate('/login');
+  };
 
-    const handleLogout = () => {
-        localStorage.removeItem('userInfo');
-        navigate('/login');
-    };
+  // --- MENU PROFILE (Góc phải trên) ---
+  const userMenu = {
+    items: [
+      { 
+        key: 'profile', 
+        label: 'Hồ sơ cá nhân', 
+        icon: <UserOutlined />, 
+        onClick: () => navigate('/profile') 
+      },
+      { type: 'divider' },
+      { 
+        key: 'logout', 
+        label: 'Đăng xuất', 
+        icon: <LogoutOutlined />, 
+        danger: true, 
+        onClick: handleLogout 
+      },
+    ]
+  };
 
-    const userMenuItems = [
-        { key: 'profile', label: 'Hồ sơ cá nhân', icon: <UserOutlined /> , onClick: () => navigate('/profile') },
-        { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true },
-    ];
+  // --- MENU SIDEBAR (Bên trái) ---
+  const menuItems = [
+    {
+      key: '/dashboard',
+      icon: <DashboardOutlined />,
+      label: 'Tổng quan',
+    },
+    {
+      key: '/classes',
+      icon: <ReadOutlined />,
+      label: 'Lớp đồ án',
+    },
+    // PHÂN QUYỀN: GV xem Tiến độ lớp, SV xem Nhóm của tôi
+    isLecturer ? {
+      key: '/projects', // Dẫn đến trang danh sách tất cả các nhóm (để xem tiến độ)
+      icon: <PieChartOutlined />,
+      label: 'Chi tiết tiến độ',
+    } : {
+      key: '/projects', // Với SV, trang này sẽ hiển thị "Nhóm của tôi" (đã filter ở frontend)
+      icon: <ProjectOutlined />,
+      label: 'Nhóm đồ án của tôi',
+    },
+    {
+      key: '/calendar',
+      icon: <CalendarOutlined />,
+      label: 'Lịch biểu / Deadline',
+    },
+    {
+      key: '/inbox',
+      icon: <MessageOutlined />,
+      label: <Space>Tin nhắn <Badge count={0} size="small" /></Space>, // Placeholder badge
+    },
+    { type: 'divider' }, // Đường kẻ phân cách
+    {
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: 'Cài đặt',
+    },
+    {
+      key: '/support',
+      icon: <QuestionCircleOutlined />,
+      label: 'Hỗ trợ',
+    },
+  ];
 
-    const handleMenuClick = ({ key }) => {
-        if (key === 'logout') {
-            handleLogout();
-        }
-        if (key === 'profile') {
-            navigate('/profile');
-        }
-    };
-
-    const menuItems = [
-        {
-        key: '/dashboard',
-        icon: <HomeOutlined />,
-        label: 'Tổng quan',
-        onClick: () => navigate('/dashboard'),
-        },
-        {
-        key: '/classes',
-        icon: <ReadOutlined />,
-        label: 'Lớp đồ án', 
-        onClick: () => navigate('/classes'),
-        },
-        {
-        key: '/projects',
-        icon: <ProjectOutlined />,
-        label: 'Đồ án / Nhóm',
-        onClick: () => navigate('/projects'),
-        },
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      {/* SIDEBAR */}
+      <Sider trigger={null} collapsible collapsed={collapsed} width={240} style={{
+        overflow: 'auto', height: '100vh', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 100
+      }}>
+        <div style={{ height: 64, margin: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6 }}>
+           {collapsed ? <ProjectOutlined style={{ fontSize: 24, color: '#fff' }} /> : <Text strong style={{ color: '#fff', fontSize: 18 }}>Dev Management</Text>}
+        </div>
         
-        {
-        key: '/users',
-        icon: <TeamOutlined />,
-        label: 'Quản lý người dùng', 
-        onClick: () => navigate('/users'),
-        },
-    ];
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[location.pathname]} // Highlight menu theo URL hiện tại
+          items={menuItems}
+          onClick={(e) => navigate(e.key)}
+        />
+      </Sider>
+      
+      {/* MAIN CONTENT AREA */}
+      <Layout style={{ marginLeft: collapsed ? 80 : 240, transition: 'all 0.2s' }}>
+        <Header
+          style={{
+            padding: '0 24px',
+            background: colorBgContainer,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 64,
+            position: 'sticky',
+            top: 0,
+            zIndex: 99,
+            boxShadow: '0 2px 8px #f0f1f2'
+          }}
+        >
 
-    return (
-        <Layout style={{ minHeight: '100vh' }}>
-        {/* 1. SIDEBAR TRÁI */}
-        <Sider trigger={null} collapsible collapsed={collapsed} width={250} style={{ background: '#001529' }}>
-            <div style={{ height: 64, margin: 16, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', fontSize: collapsed ? 10 : 18, overflow: 'hidden' }}>
-            {collapsed ? 'QLDA' : 'QUẢN LÝ ĐỒ ÁN'}
-            </div>
-            <Menu
-            theme="dark"
-            mode="inline"
-            defaultSelectedKeys={['/dashboard']}
-            selectedKeys={[location.pathname]}
-            items={menuItems}
-            />
-        </Sider>
+          
+          {/* Nút Toggle Sidebar */}
+          <Button
+            type="text"
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setCollapsed(!collapsed)}
+            style={{ fontSize: '16px', width: 64, height: 64 }}
+          />
 
-        <Layout>
-            {/* 2. HEADER TRÊN CÙNG */}
-            <Header style={{ padding: 0, background: colorBgContainer, display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 24 }}>
-            <Button
-                type="text"
-                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                onClick={() => setCollapsed(!collapsed)}
-                style={{ fontSize: '16px', width: 64, height: 64 }}
-            />
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                <span style={{ fontWeight: 500 }}>
-                Xin chào, {userInfo?.fullName} ({userInfo?.role === 'student' ? 'Sinh viên' : 'Giảng viên'})
+          {/* User Info & Avatar */}
+          <Dropdown menu={{ items: userMenu.items }} placement="bottomRight">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                cursor: 'pointer'
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  lineHeight: 1.2
+                }}
+              >
+                <span style={{ fontWeight: 600 }}>
+                  {userInfo?.fullName || 'Người dùng'}
                 </span>
-                <Dropdown
-                    menu={{ items: userMenuItems, onClick: handleMenuClick }}
-                    placement="bottomRight"
-                    trigger={['hover']}
-                >
-                    <span>
-                        <Avatar
-                        style={{ backgroundColor: '#1890ff', cursor: 'pointer' }}
-                        icon={<UserOutlined />}
-                        />
-                    </span>
-                </Dropdown>
-            </div>
-            </Header>
+                <span style={{ fontSize: 12, color: '#888' }}>
+                  {isLecturer ? 'Giảng viên' : 'Sinh viên'}
+                </span>
+              </div>
 
-            {/* 3. CONTENT Ở GIỮA */}
-            <Content style={{ margin: '24px 16px', padding: 24, minHeight: 280, background: colorBgContainer, borderRadius: borderRadiusLG, overflow: 'initial' }}>
-            {/* Outlet là nơi các trang con (Dashboard, Class, Project...) sẽ hiển thị */}
-            <Outlet />
-            </Content>
-        </Layout>
-        </Layout>
-    );
-    };
+              <Avatar
+                size={40}
+                src={userInfo?.avatarUrl}
+                icon={<UserOutlined />}
+                style={{ backgroundColor: '#1890ff' }}
+              />
+            </div>
+          </Dropdown>
+
+        </Header>
+        
+        {/* Nơi chứa nội dung thay đổi (Dashboard, Class, Project...) */}
+        <Content
+          style={{
+            margin: '24px 16px',
+            padding: 24,
+            minHeight: 280,
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+            overflow: 'initial'
+          }}
+        >
+          <Outlet />
+        </Content>
+      </Layout>
+    </Layout>
+  );
+};
 
 export default MainLayout;
