@@ -135,6 +135,11 @@ const MainLayout = () => {
       label: 'Tổng quan',
     },
     {
+      key: '/profile', // <-- ĐƯA PROFILE VÀO ĐÂY (Dưới Dashboard)
+      icon: <UserOutlined />,
+      label: 'Hồ sơ cá nhân',
+    },
+    {
       key: '/classes',
       icon: <ReadOutlined />,
       label: 'Lớp đồ án',
@@ -213,8 +218,31 @@ const MainLayout = () => {
           items={menuItems}
           onClick={(e) => navigate(e.key)}
         />
+
+          <div style={{ 
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)', 
+            padding: '12px',
+        }}>
+            <div 
+                onClick={handleLogout}
+                style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: collapsed ? 'center' : 'flex-start',
+                    padding: '10px 16px', 
+                    cursor: 'pointer', 
+                    color: '#ff4d4f', // Màu đỏ cho nút đăng xuất
+                    borderRadius: 8,
+                    transition: 'all 0.3s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 77, 79, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+                <LogoutOutlined style={{ fontSize: 18, marginRight: collapsed ? 0 : 10 }} />
+                {!collapsed && <span style={{ fontWeight: 500 }}>Đăng xuất</span>}
+            </div>
+        </div>
       </Sider>
-      
       {/* MAIN CONTENT AREA */}
       <Layout style={{ marginLeft: collapsed ? 80 : 240, transition: 'all 0.2s' }}>
         <Header
@@ -269,8 +297,9 @@ const MainLayout = () => {
             </Dropdown>
 
             {/* User */}
-            <Dropdown menu={{ items: userMenu.items }} placement="bottomRight">
+            
               <div
+              onClick={() => navigate('/profile')} 
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -301,7 +330,7 @@ const MainLayout = () => {
                   style={{ backgroundColor: '#1890ff' }}
                 />
               </div>
-            </Dropdown>
+            
 
           </div>
 
