@@ -21,6 +21,12 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Email này đã được sử dụng!' });
     }
 
+    const existedPhone = await User.findOne({ numberPhone });
+
+    if (existedPhone) {
+      return res.status(400).json({ message: "Số điện thoại đã tồn tại" });
+    }
+    
     // 2. Tạo User mới
     const user = await User.create({
       fullName,

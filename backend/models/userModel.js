@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
     
     //user information
     fullName: { type: String, required: true},
-    numberPhone: { type: String, sparse: true, unique: true},
+    numberPhone: { type: String, required: true },
     university: { type: String, required: true, default: 'Phenikaa'},
     gender: { type: String, enum: ['Nam', 'Nữ', 'Khác']},
     dateOfBirth: { type: Date},
