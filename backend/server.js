@@ -15,6 +15,7 @@ const courseworkRoutes = require('./routes/courseworkRoutes');
 const calendarRoutes = require('./routes/calendarRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 dotenv.config();
 connectDB();
@@ -60,6 +61,7 @@ app.use('/api/coursework', courseworkRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/upload', uploadRoutes);
 
 const PORT = process.env.PORT || 5000;
 

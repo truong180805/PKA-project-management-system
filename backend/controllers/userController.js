@@ -139,7 +139,9 @@ const updateUserProfile = async (req, res) => {
       // 1. Cập nhật thông tin cơ bản
       user.fullName = req.body.fullName || user.fullName;
       user.numberPhone = req.body.numberPhone || user.numberPhone;
-      
+      if (req.body.avatarUrl !== undefined) {
+        user.avatarUrl = req.body.avatarUrl;
+        }
       // Các trường khác (Class, Major, Department) tùy bạn có muốn cho sửa không
       if (req.body.className) user.className = req.body.className;
       if (req.body.major) user.major = req.body.major;
@@ -176,6 +178,7 @@ const updateUserProfile = async (req, res) => {
         className: updatedUser.className,
         major: updatedUser.major,
         department: updatedUser.department,
+        avatarUrl: updatedUser.avatarUrl,
         token: req.header('Authorization')?.replace('Bearer ', '') // Giữ nguyên token cũ
       });
 
