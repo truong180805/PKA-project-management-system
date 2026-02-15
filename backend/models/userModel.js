@@ -3,12 +3,17 @@ const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
     // login
-    numberPhone: { type: String, sparse: true, unique: true},
+    email: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    match: [/.+\@.+\..+/, 'Vui lòng nhập email hợp lệ']
+    },
     password: { type: String, required: true},
     
     //user information
     fullName: { type: String, required: true},
-    email: { type: String, sparse: true, unique: true},
+    numberPhone: { type: String, sparse: true, unique: true},
     university: { type: String, required: true, default: 'Phenikaa'},
     gender: { type: String, enum: ['Nam', 'Nữ', 'Khác']},
     dateOfBirth: { type: Date},
@@ -38,5 +43,9 @@ userSchema.pre('save', async function () {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
 });
+
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema);
