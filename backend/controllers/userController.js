@@ -102,6 +102,13 @@ const updateUserProfile = async (req, res) => {
       if (req.body.department) user.department = req.body.department;
       // Lưu ý: Không cho sửa Email, Role, StudentId ở đây để bảo toàn dữ liệu hệ thống
 
+      if (req.body.settings) {
+          user.settings = {
+              ...user.settings, // Giữ lại các setting cũ
+              ...req.body.settings // Ghi đè setting mới
+          };
+      }
+
       // 2. Xử lý Đổi mật khẩu (Nếu có gửi lên)
       if (req.body.password) {
         // Nếu muốn đổi mật khẩu, BẮT BUỘC phải gửi kèm mật khẩu cũ (oldPassword)
@@ -133,6 +140,7 @@ const updateUserProfile = async (req, res) => {
         major: updatedUser.major,
         department: updatedUser.department,
         avatarUrl: updatedUser.avatarUrl,
+        settings: updatedUser.settings,
         token: req.header('Authorization')?.replace('Bearer ', '') // Giữ nguyên token cũ
       });
 

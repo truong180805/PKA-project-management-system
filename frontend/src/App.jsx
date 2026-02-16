@@ -1,5 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { ConfigProvider, theme } from 'antd'; 
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MainLayout from './components/MainLayout';
@@ -26,8 +29,18 @@ import ClassMaterialsPage from './pages/class/ClassMaterialsPage';
 import ClassGradesPage from './pages/class/ClassGradesPage';
 
 
-function App() {
+const AppContent = () => {
+  const { isDarkMode } = useTheme();
+
   return(
+    <ConfigProvider
+      theme={{
+        algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm, // THUẬT TOÁN ĐỔI MÀU
+        token: {
+          colorPrimary: '#1890ff', // Màu chủ đạo
+        },
+      }}
+    >
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -58,6 +71,15 @@ function App() {
         </Route>
       </Route>
     </Routes>
+    </ConfigProvider>
+  );
+};
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

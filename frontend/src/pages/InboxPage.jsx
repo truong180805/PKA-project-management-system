@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, List, Avatar, Input, Button, Typography, Card, Badge, Spin, Empty } from 'antd';
+import { Layout, theme, List, Avatar, Input, Button, Typography, Card, Badge, Spin, Empty } from 'antd';
 import { SendOutlined, ReadOutlined, ProjectOutlined, UserOutlined, MessageOutlined } from '@ant-design/icons';
 import api from '../api';
 import dayjs from 'dayjs';
@@ -18,6 +18,9 @@ const InboxPage = () => {
   const [loadingList, setLoadingList] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(false);
   
+  const { useToken } = theme;
+  const { token } = useToken();
+
   const messagesEndRef = useRef(null);
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
 
@@ -127,11 +130,11 @@ const InboxPage = () => {
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 120px)', background: '#fff', border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden', display: 'flex' }}>
+    <div style={{ height: 'calc(100vh - 120px)', background: token.colorBgContainer, border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden', display: 'flex' }}>
       
       {/* SIDEBAR DANH SÁCH CHAT */}
       <div style={{ width: 300, borderRight: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: 16, borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+          <div style={{ padding: 16, borderBottom: '1px solid #f0f0f0', background: token.colorBgContainer, }}>
               <Title level={5} style={{ margin: 0 }}>Hộp thư đến</Title>
           </div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -145,11 +148,11 @@ const InboxPage = () => {
                             style={{ 
                                 padding: '12px 16px', 
                                 cursor: 'pointer', 
-                                background: selectedChat?.id === item.id ? '#e6f7ff' : 'transparent',
+                                background: token.colorBgContainer,
                                 borderRight: selectedChat?.id === item.id ? '3px solid #1890ff' : 'none',
                                 transition: 'all 0.2s'
                             }}
-                            onMouseEnter={(e) => { if(selectedChat?.id !== item.id) e.currentTarget.style.background = '#fafafa'; }}
+                            onMouseEnter={(e) => { if(selectedChat?.id !== item.id) background: token.colorBgContainer; }}
                             onMouseLeave={(e) => { if(selectedChat?.id !== item.id) e.currentTarget.style.background = 'transparent'; }}
                         >
                             <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -170,7 +173,7 @@ const InboxPage = () => {
       </div>
 
       {/* KHUNG CHAT CHÍNH */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: token.colorBgContainer, }}>
           {selectedChat ? (
               <>
                   {/* HEADER */}
@@ -179,7 +182,7 @@ const InboxPage = () => {
                   </div>
 
                   {/* MESSAGE LIST */}
-                  <div style={{ flex: 1, padding: 24, overflowY: 'auto', background: '#fff' }}>
+                  <div style={{ flex: 1, padding: 24, overflowY: 'auto', background: token.colorBgContainer, }}>
                       {loadingMsg ? <div style={{textAlign: 'center'}}><Spin /></div> : (
                           messages.length > 0 ? messages.map(renderMessage) : <Empty description="Chưa có tin nhắn nào. Hãy bắt đầu trò chuyện!" />
                       )}
@@ -187,7 +190,7 @@ const InboxPage = () => {
                   </div>
 
                   {/* INPUT AREA */}
-                  <div style={{ padding: 16, borderTop: '1px solid #f0f0f0', background: '#fafafa' }}>
+                  <div style={{ padding: 16, borderTop: '1px solid #f0f0f0', background: token.colorBgContainer, }}>
                       <div style={{ display: 'flex', gap: 10 }}>
                           <Input 
                               placeholder="Nhập tin nhắn..." 

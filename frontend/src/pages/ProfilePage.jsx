@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Card, Form, Input, Button, Row, Col, Avatar, Tabs, message, Descriptions, Tag, Divider, Upload } from 'antd'; // Thêm Upload
+import { Layout, theme, Typography, Card, Form, Input, Button, Row, Col, Avatar, Tabs, message, Descriptions, Tag, Divider, Upload } from 'antd'; // Thêm Upload
 import { UserOutlined, LockOutlined, PhoneOutlined, MailOutlined, SaveOutlined, SolutionOutlined, BankOutlined, SafetyCertificateOutlined, UploadOutlined, CameraOutlined } from '@ant-design/icons';
 import api from '../api';
 
 const { Title, Text } = Typography;
 
 const ProfilePage = () => {
+  const { token } = theme.useToken();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(''); // State lưu link ảnh mới
@@ -210,7 +211,7 @@ const ProfilePage = () => {
   return (
     <div style={{ padding: '0 12px' }}>
       <Title level={2}>Hồ sơ cá nhân</Title>
-      <div style={{ background: '#fff', padding: 24, borderRadius: 8 }}>
+      <div style={{ background: token.colorBgContainer, padding: 24, borderRadius: 8 }}>
         <Tabs defaultActiveKey="1" items={[
             { key: '1', label: <span><UserOutlined /> Thông tin chung</span>, children: <InfoTab /> },
             { key: '2', label: <span><LockOutlined /> Bảo mật</span>, children: <SecurityTab /> },

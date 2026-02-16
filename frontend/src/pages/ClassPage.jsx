@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, List, Typography, Modal, Form, Input, message, Tag, Row, Col, Statistic, Switch, Empty } from 'antd';
+import { Button, Card, theme, List, Typography, Modal, Form, Input, message, Tag, Row, Col, Statistic, Switch, Empty } from 'antd';
 import { PlusOutlined, CopyOutlined, TeamOutlined, UsergroupAddOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const { Title, Text } = Typography;
 
 const ClassPage = () => {
+    const { token } = theme.useToken();
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,7 +118,7 @@ const ClassPage = () => {
                             }}
                             styles={{
                                 header: {
-                                    backgroundColor: '#f0f5ff',
+                                    backgroundColor: token.colorBgContainer,
                                     borderBottom: '1px solid #d6e4ff'
                                 },
                                 body: { padding: '24px' }

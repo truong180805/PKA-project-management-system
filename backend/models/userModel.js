@@ -35,6 +35,11 @@ const userSchema = new mongoose.Schema({
     //lecturer
     department: { type: String },
 
+    settings: {
+    receiveEmail: { type: Boolean, default: true }, // Mặc định là CÓ nhận
+    language: { type: String, default: 'vi' }       // (Tùy chọn) Lưu ngôn ngữ ưa thích
+    },
+
     isActive: { type: Boolean, default: true },
 
     resetPasswordToken: String,
