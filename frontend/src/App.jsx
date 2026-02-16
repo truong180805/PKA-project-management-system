@@ -13,6 +13,8 @@ import CalendarPage from './pages/calendarPage';
 import SettingsPage from './pages/SettingsPage';
 import SupportPage from './pages/SupportPage';
 import InboxPage from './pages/InboxPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 import ClassLayout from './components/ClassLayout';
 import ClassStreamPage from './pages/class/ClassStreamPage';
@@ -29,6 +31,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Navigate to="dashboard"/>} />

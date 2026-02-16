@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const User = require('../models/userModel');
+const sendEmail = require('../utils/sendEmail');
 
 // create token fuction
 const generateToken = (id) => {
@@ -142,8 +144,84 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy tài khoản với email này' });
+    }
+
+    // Lấy token từ model
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false }); // Lưu lại token vào DB
+
+    // Tạo URL reset (Frontend URL)
+    // Lưu ý: Port 5173 là của Vite Frontend
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+    const message = `Bạn nhận được email này vì đã yêu cầu đặt lại mật khẩu.\n\nVui lòng truy cập đường dẫn sau để đặt lại mật khẩu (Link hết hạn sau 10 phút):\n\n${resetUrl}\n\nNếu bạn không yêu cầu, vui lòng bỏ qua email này.`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Yêu cầu đặt lại mật khẩu - DevManager',
+        message,
+      });
+
+      res.status(200).json({ success: true, data: 'Email đã được gửi!' });
+    } catch (error) {
+      // Nếu gửi lỗi thì xóa token đi để user thử lại
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({ message: 'Không thể gửi email. Vui lòng thử lại.' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    // 1. Mã hóa token từ URL để so sánh với DB
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.token)
+      .digest('hex');
+
+    // 2. Tìm user có token đó và chưa hết hạn
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Token không hợp lệ hoặc đã hết hạn' });
+    }
+
+    // 3. Đặt mật khẩu mới
+    user.password = req.body.password;
+    
+    // 4. Xóa token
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save(); // Middleware pre-save sẽ tự hash password mới
+
+    res.status(200).json({ success: true, data: 'Cập nhật mật khẩu thành công!' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     registerUser,
     loginUser,
-    updateUserProfile
+    updateUserProfile,
+    forgotPassword,
+    resetPassword
 };
