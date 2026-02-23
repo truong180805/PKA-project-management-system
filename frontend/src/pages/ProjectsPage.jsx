@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Tag, Button, Typography, Card, Input, Space, Tooltip, Avatar, Select, Progress, Row, Col, Statistic } from 'antd';
+import { Table, Tag, Button, Progress, Typography, Card, Input, Space, Tooltip, Avatar, Select, Row, Col, Statistic } from 'antd';
 import { SearchOutlined, FolderOpenOutlined, UserOutlined, FilterOutlined, PieChartOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -111,6 +111,23 @@ const ProjectsPage = () => {
       title: 'Điểm số',
       key: 'score',
       render: (_, record) => record.score !== undefined ? <Tag color="purple" style={{fontWeight: 'bold'}}>{record.score}</Tag> : <Text type="secondary">-</Text>
+    },
+    {
+      title: 'Tiến độ',
+      dataIndex: 'progress',
+      key: 'progress',
+      width: 150,
+      render: (progress) => (
+          <Progress 
+              percent={progress || 0} 
+              size="small" 
+              status={progress === 100 ? 'success' : 'active'} 
+              strokeColor={{
+                  '0%': '#108ee9',
+                  '100%': '#87d068',
+              }}
+          />
+      ),
     },
     {
       title: 'Hành động',

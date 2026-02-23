@@ -16,13 +16,15 @@ const createTask = async (req, res) => {
             res.status('403').json({message: 'Bạn không phải thành viên của nhóm'});
         }
 
-        const newTask = await Task.create({
+        const task = await Task.create({
             project: projectId, title, description,
             assignedTo: assignedTo || req.user._id, dueDate,
             status: 'todo'
         });
 
-        res.status(201).json(newTask);
+        await updateProjectProgress(task.project);
+
+        res.status(201).json(task);
     } catch (error) {
         res.status(500).json({ message: error.message});
     }
@@ -56,6 +58,10 @@ const updateTask = async (req, res) => {
         if (assignedTo) task.assignedTo = assignedTo;
         if (dueDate) task.dueDate = dueDate;
 
+        if (task) {
+        await updateProjectProgress(task.project);
+        };
+
         await task.save();
         
         // Populate lại thông tin người được gán để trả về frontend hiển thị ngay
@@ -70,6 +76,11 @@ const updateTask = async (req, res) => {
 const deleteTask = async (req, res) => {
     try {
         await Task.findByIdAndDelete(req.params.id);
+
+        if (task) {
+        await updateProjectProgress(task.project);
+        };
+
         res.json({ message: 'Đã xóa task'});
     } catch (erro) {
         res.status(5000).json({ message: error.message});
@@ -96,6 +107,20 @@ const submitProject = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+const updateProjectProgress = async (projectId) => {
+    // 1. Đếm tổng số task của nhóm này
+    const totalTasks = await Task.countDocuments({ project: projectId });
+    
+    // 2. Đếm số task đã hoàn thành (giả sử trạng thái hoàn thành là 'done')
+    const completedTasks = await Task.countDocuments({ project: projectId, status: 'completed' });
+    
+    // 3. Tính % (tránh lỗi chia cho 0)
+    const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+    
+    // 4. Cập nhật vào DB
+    await Project.findByIdAndUpdate(projectId, { progress });
 };
 
 module.exports = {

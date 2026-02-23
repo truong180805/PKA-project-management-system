@@ -39,6 +39,8 @@ const projectSchema = new mongoose.Schema({
         enum: ['pending', 'approved', 'rejected', 'completed'],
         default: 'pending'
     },
+
+    progress: { type: Number, default: 0 },
     
     finalReportUrl: { type: String },
     lecturerFeedback: { type: String, default: "" },
