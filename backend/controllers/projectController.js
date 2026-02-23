@@ -1,39 +1,56 @@
-const User = require('../models/userModel');
+const Topic = require('../models/projectModel');
 const Project = require('../models/projectModel');
 const Class = require('../models/classModel');
 
 //create project function
 const createProject = async (req, res) => {
-    try{
-        const {name, description, classId } = req.body;
-        
-        const classItem = await Class.findById(classId);
-        if(!classItem) {
-            return res.status(404).json({ message: 'Lớp không tồn tại'});
-        }
-        
-        const existingProject = await Project.findOne({
-            class: classId,
-            members: req.user._id
-        })
-        
-        if (existingProject) {
-            return res.status(400).json({ message: 'Bạn đã tham gia một nhóm trong lớp này rồi'});
-        }
+  try {
+    // Nhận dữ liệu từ Frontend gửi lên
+    const { name, description, classId, topicId, proposedTopic } = req.body;
 
-        const newProject = await Project.create({
-            name,
-            description,
-            class: classId,
-            members: [req.user._id],
-            leader: req.user._id,
-            status: 'pending'
-        })
-        
-        res.status(201).json(newProject);
-    } catch (error) {
-        res.status(500).json({ message: error.message});
+    if (!name || !classId) {
+        return res.status(400).json({ message: 'Vui lòng điền đủ tên nhóm và chọn lớp' });
     }
+
+    // Kiểm tra xem sinh viên đã có nhóm trong lớp này chưa
+    const existingProject = await Project.findOne({ class: classId, members: req.user._id });
+    if (existingProject) {
+        return res.status(400).json({ message: 'Bạn đã tham gia một nhóm trong lớp này rồi' });
+    }
+
+    let finalTopicId = topicId;
+
+    // NẾU SINH VIÊN ĐỀ XUẤT ĐỀ TÀI MỚI (Không chọn có sẵn)
+    if (proposedTopic && proposedTopic.name) {
+        const newTopic = await Topic.create({
+            name: proposedTopic.name,
+            description: proposedTopic.description,
+            class: classId,
+            createdBy: req.user._id,
+            status: 'pending' // Đề tài mới phải chờ duyệt
+        });
+        finalTopicId = newTopic._id;
+    }
+
+    if (!finalTopicId) {
+        return res.status(400).json({ message: 'Vui lòng chọn đề tài hoặc đề xuất đề tài mới' });
+    }
+
+    // Tạo Nhóm mới, gắn với Topic ID vừa xử lý
+    const project = await Project.create({
+      name,
+      description,
+      class: classId,
+      topic: finalTopicId,
+      leader: req.user._id,
+      members: [req.user._id],
+      status: 'pending' // Nhóm luôn chờ GV duyệt
+    });
+
+    res.status(201).json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 const getProjectsByClass = async (req, res) => {
@@ -97,27 +114,29 @@ const joinProject = async (req, res) => {
 };
 
 const approveProject = async (req, res) => {
-    try{
-        const { id } = req.params;
-        const { status, feedback } = req.body;
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // Nhận 'approved' hoặc 'rejected'
 
-        if (req.user.role !== 'lecturer') {
-            return res.status(403).json({ message: 'Chỉ giảng viên mới được duyệt đề tài'})
-        }
+    // Lấy nhóm và populate luôn thông tin topic của nó
+    const project = await Project.findById(id).populate('topic');
+    
+    if (!project) return res.status(404).json({ message: 'Không tìm thấy nhóm' });
 
-        const project = await Project.findByIdAndUpdate(
-            id,
-            { status, lecturerFeedback: feedback },
-            { new: true }
-        );
+    // Cập nhật trạng thái nhóm
+    project.status = status;
+    await project.save();
 
-        if (!project) return res.status(404).json({ message: 'Nhóm không tồn tại'});
-
-        res.json({ message: `Đã cập nhật trạng thái: ${status}`, project });
-    }catch(error) {
-        res.status(500).json({ message: error.message });
+    // LOGIC THÔNG MINH: Nếu Duyệt nhóm, tự động Duyệt luôn đề tài nhóm đó đang giữ (nếu đề tài đó đang pending)
+    if (status === 'approved' && project.topic && project.topic.status === 'pending') {
+        await Topic.findByIdAndUpdate(project.topic._id, { status: 'approved' });
     }
-}
+
+    res.json({ message: `Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} nhóm thành công`, project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const submitProject = async (req, res) => {
   try {

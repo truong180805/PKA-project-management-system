@@ -1,128 +1,226 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
-import { Button, Card, List, Typography, Avatar, Tooltip, Tag, Modal, Form, Input, message, Row, Col, Empty } from 'antd';
-import { PlusOutlined, UserOutlined, LoginOutlined, HomeOutlined } from '@ant-design/icons';
+import { useOutletContext } from 'react-router-dom';
+import { Table, Button, Modal, Form, Input, Select, message, Tag, Space, Radio, Typography, Avatar, Tooltip, Popconfirm } from 'antd';
+import { PlusOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import api from '../../api';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const ClassGroupsPage = () => {
   const { classData } = useOutletContext();
-  const navigate = useNavigate();
-  const [projects, setProjects] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // States cho Form tạo nhóm
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [topicMode, setTopicMode] = useState('select'); // 'select' hoặc 'propose'
   const [form] = Form.useForm();
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
   const isLecturer = userInfo.role === 'lecturer';
 
-  const fetchProjects = async () => {
+  // --- TẢI DỮ LIỆU ---
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/projects/class/${classData._id}`);
-      setProjects(data);
-    } catch (error) { message.error('Lỗi tải danh sách nhóm'); } 
-    finally { setLoading(false); }
+      // 1. Lấy danh sách nhóm
+      const resGroups = await api.get(`/projects/class/${classData._id}`);
+      setGroups(resGroups.data);
+
+      // 2. Lấy danh sách đề tài (để sinh viên chọn)
+      if (!isLecturer) {
+          const resTopics = await api.get(`/coursework/topics/class/${classData._id}`);
+          // Chỉ lấy các đề tài đã được GV duyệt
+          setTopics(resTopics.data.filter(t => t.status === 'approved'));
+      }
+    } catch (error) {
+      message.error('Lỗi tải dữ liệu');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { if (classData?._id) fetchProjects(); }, [classData]);
+  useEffect(() => {
+    if (classData?._id) fetchData();
+  }, [classData]);
 
-  // Tạo nhóm (Chỉ là gom team, chưa có đề tài)
+  // --- SINH VIÊN: TẠO NHÓM ---
   const handleCreateGroup = async (values) => {
-      try {
-          await api.post('/projects', {
-              name: values.name,
-              description: values.description,
-              classId: classData._id
-          });
-          message.success('Tạo nhóm thành công! Hãy sang tab "Đề tài" để đăng ký.');
-          setIsModalOpen(false);
-          fetchProjects();
-      } catch (error) { message.error('Tạo nhóm thất bại'); }
-  }
+    try {
+      // Chuẩn bị payload theo đúng chuẩn Backend vừa viết
+      const payload = {
+        name: values.groupName,
+        description: values.groupDesc,
+        classId: classData._id,
+      };
 
-  const handleJoinGroup = async (projectId) => {
-      try {
-          await api.post('/projects/join', { projectId });
-          message.success('Đã tham gia nhóm');
-          fetchProjects();
-      } catch (error) { message.error(error.response?.data?.message); }
-  }
+      if (topicMode === 'select') {
+          payload.topicId = values.topicId;
+      } else {
+          payload.proposedTopic = {
+              name: values.newTopicName,
+              description: values.newTopicDesc
+          };
+      }
 
-  // Tìm nhóm của tôi
-  const myGroup = projects.find(p => p.members.some(m => m._id === userInfo._id));
+      await api.post('/projects', payload);
+      
+      message.success('Đã tạo nhóm! Vui lòng chờ Giảng viên duyệt.');
+      setIsModalOpen(false);
+      form.resetFields();
+      fetchData();
+    } catch (error) {
+      message.error(error.response?.data?.message || 'Lỗi tạo nhóm');
+    }
+  };
+
+  // --- GIẢNG VIÊN: DUYỆT NHÓM ---
+  const handleApprove = async (projectId, status) => {
+      try {
+          await api.put(`/projects/${projectId}/approve`, { status });
+          message.success(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} nhóm!`);
+          fetchData();
+      } catch (error) {
+          message.error('Lỗi thao tác');
+      }
+  };
+
+  // --- CẤU HÌNH CỘT BẢNG ---
+  const columns = [
+    {
+      title: 'Tên Nhóm',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => <Text strong style={{ color: '#1677ff' }}>{text}</Text>,
+    },
+    {
+      title: 'Đề tài',
+      dataIndex: 'topic',
+      key: 'topic',
+      render: (topic) => topic ? (
+          <Tooltip title={topic.description}>
+             <Text strong>{topic.name}</Text>
+          </Tooltip>
+      ) : <Text type="secondary">Chưa có đề tài</Text>,
+    },
+    {
+      title: 'Thành viên',
+      dataIndex: 'members',
+      key: 'members',
+      render: (members) => (
+        <Avatar.Group maxCount={4} size="small">
+            {members.map(m => (
+                <Tooltip title={m.fullName} key={m._id}>
+                    <Avatar src={m.avatarUrl} icon={<UserOutlined />} />
+                </Tooltip>
+            ))}
+        </Avatar.Group>
+      )
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => {
+        let color = status === 'approved' ? 'success' : status === 'pending' ? 'warning' : 'error';
+        let text = status === 'approved' ? 'Đã duyệt' : status === 'pending' ? 'Chờ duyệt' : 'Từ chối';
+        return <Tag color={color}>{text}</Tag>;
+      },
+    },
+    {
+      title: 'Hành động',
+      key: 'action',
+      render: (_, record) => {
+          if (isLecturer && record.status === 'pending') {
+              return (
+                  <Space>
+                      <Button size="small" type="primary" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record._id, 'approved')}>Duyệt</Button>
+                      <Popconfirm title="Từ chối nhóm này?" onConfirm={() => handleApprove(record._id, 'rejected')}>
+                          <Button size="small" danger icon={<CloseCircleOutlined />}>Từ chối</Button>
+                      </Popconfirm>
+                  </Space>
+              )
+          }
+          // Nút cho sinh viên xin vào nhóm (có thể mở rộng sau)
+          return null;
+      }
+    },
+  ];
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-         <Title level={3} style={{ margin: 0 }}>Danh sách Nhóm</Title>
-         {!isLecturer && !myGroup && (
-             <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
-                 Tạo nhóm mới
-             </Button>
-         )}
+        <Title level={3} style={{ margin: 0 }}>Danh sách Nhóm</Title>
+        {!isLecturer && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+            Tạo nhóm mới
+          </Button>
+        )}
       </div>
 
-      {/* HIỂN THỊ NHÓM CỦA TÔI NỔI BẬT */}
-      {!isLecturer && myGroup && (
-          <Card 
-            style={{ marginBottom: 24, background: '#f6ffed', borderColor: '#b7eb8f' }}
-            title={<><HomeOutlined /> Nhóm của bạn: <Text strong>{myGroup.name}</Text></>}
-            extra={<Button type="primary" onClick={() => navigate(`/projects/${myGroup._id}`)}>Vào không gian làm việc</Button>}
-          >
-              <Text>Thành viên: </Text>
-              <Avatar.Group size="small">
-                  {myGroup.members.map(m => <Tooltip title={m.fullName} key={m._id}><Avatar style={{background: '#87d068'}}>{m.fullName[0]}</Avatar></Tooltip>)}
-              </Avatar.Group>
-          </Card>
-      )}
-
-      <List
-        grid={{ gutter: 16, xs: 1, sm: 2, md: 3 }}
-        dataSource={projects}
+      <Table 
+        columns={columns} 
+        dataSource={groups} 
+        rowKey="_id" 
         loading={loading}
-        locale={{ emptyText: <Empty description="Chưa có nhóm nào được tạo" /> }}
-        renderItem={item => {
-            const isMine = item.members?.some(m => m._id === userInfo._id);
-            return (
-                <List.Item>
-                    <Card
-                        title={item.name}
-                        extra={isMine ? <Tag color="blue">Nhóm tôi</Tag> : null}
-                        actions={
-                            !isLecturer && !myGroup && !isMine ? [
-                                <Button type="link" icon={<LoginOutlined />} onClick={() => handleJoinGroup(item._id)}>Tham gia</Button>
-                            ] : isLecturer ? [
-                                <Button type="link" onClick={() => navigate(`/projects/${item._id}`)}>Xem tiến độ</Button>
-                            ] : []
-                        }
-                    >
-                        <div style={{ marginBottom: 12 }}>
-                            <Text type="secondary" style={{fontSize: 12}}>Leader: {item.leader?.fullName || "chưa có leader"}</Text>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Avatar.Group maxCount={4} size="small">
-                                {item.members.map(m => (
-                                    <Tooltip title={m.fullName} key={m._id}>
-                                        <Avatar src={m.avatarUrl} icon={<UserOutlined />} />
-                                    </Tooltip>
-                                ))}
-                            </Avatar.Group>
-                            <Tag>{item.members.length} tv</Tag>
-                        </div>
-                    </Card>
-                </List.Item>
-            )
-        }}
+        pagination={{ pageSize: 10 }}
       />
 
-      <Modal title="Tạo nhóm mới" open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null}>
-          <Form onFinish={handleCreateGroup} layout="vertical">
-              <Form.Item name="name" label="Tên nhóm" rules={[{required: true}]}><Input placeholder="VD: Nhóm 1 - Siêu nhân" /></Form.Item>
-              <Form.Item name="description" label="Mô tả"><Input.TextArea placeholder="Tìm bạn..." /></Form.Item>
-              <Button type="primary" htmlType="submit" block>Tạo nhóm</Button>
-          </Form>
+      {/* --- MODAL TẠO NHÓM (DÀNH CHO SINH VIÊN) --- */}
+      <Modal 
+        title="Tạo nhóm & Đăng ký đề tài" 
+        open={isModalOpen} 
+        onCancel={() => setIsModalOpen(false)} 
+        footer={null}
+        width={600}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreateGroup}>
+          <div style={{ padding: 16, background: '#f5f5f5', borderRadius: 8, marginBottom: 16 }}>
+              <Title level={5} style={{ marginTop: 0 }}>1. Thông tin nhóm</Title>
+              <Form.Item name="groupName" label="Tên nhóm" rules={[{ required: true, message: 'Vui lòng nhập tên nhóm' }]}>
+                <Input placeholder="VD: Nhóm 1 - Web Dev" />
+              </Form.Item>
+              <Form.Item name="groupDesc" label="Mô tả / Mục tiêu của nhóm">
+                <Input.TextArea rows={2} />
+              </Form.Item>
+          </div>
+
+          <div style={{ padding: 16, border: '1px solid #d9d9d9', borderRadius: 8, marginBottom: 24 }}>
+              <Title level={5} style={{ marginTop: 0 }}>2. Đề tài Đồ án</Title>
+              
+              <Radio.Group 
+                  value={topicMode} 
+                  onChange={(e) => setTopicMode(e.target.value)} 
+                  style={{ marginBottom: 16 }}
+              >
+                  <Radio value="select">Chọn đề tài có sẵn</Radio>
+                  <Radio value="propose">Đề xuất đề tài mới</Radio>
+              </Radio.Group>
+
+              {topicMode === 'select' ? (
+                  <Form.Item name="topicId" rules={[{ required: true, message: 'Vui lòng chọn 1 đề tài' }]}>
+                      <Select placeholder="-- Chọn đề tài Giảng viên đã giao --">
+                          {topics.map(t => (
+                              <Option key={t._id} value={t._id}>{t.name}</Option>
+                          ))}
+                      </Select>
+                  </Form.Item>
+              ) : (
+                  <>
+                      <Form.Item name="newTopicName" rules={[{ required: true, message: 'Vui lòng nhập tên đề tài đề xuất' }]}>
+                          <Input placeholder="Nhập tên đề tài mới..." />
+                      </Form.Item>
+                      <Form.Item name="newTopicDesc" rules={[{ required: true, message: 'Vui lòng mô tả qua về đề tài này' }]}>
+                          <Input.TextArea rows={3} placeholder="Mô tả chức năng, công nghệ sử dụng..." />
+                      </Form.Item>
+                  </>
+              )}
+          </div>
+
+          <Button type="primary" htmlType="submit" block size="large">Xác nhận tạo nhóm</Button>
+        </Form>
       </Modal>
     </div>
   );

@@ -11,6 +11,8 @@ const projectSchema = new mongoose.Schema({
         required: true
     },
 
+    topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic' },
+
     //member group(student)
     members: [{
         type: mongoose.Schema.Types.ObjectId,
