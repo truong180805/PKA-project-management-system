@@ -1,122 +1,116 @@
-import React from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { Card, Typography, Avatar, Row, Col, List, Tag, Button } from 'antd';
-import { ReadOutlined, BellOutlined, FileTextOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
+import { Card, Typography, Avatar, List, Tag, Spin, Empty, theme } from 'antd';
+import { UserOutlined, FileTextOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import 'dayjs/locale/vi'; // Import tiếng Việt cho dayjs (vd: "2 giờ trước")
+import relativeTime from 'dayjs/plugin/relativeTime';
+import api from '../../api';
+
+// Cấu hình dayjs hiển thị thời gian tương đối
+dayjs.extend(relativeTime);
+dayjs.locale('vi'); 
 
 const { Title, Text, Paragraph } = Typography;
 
 const ClassStreamPage = () => {
-  const { classData } = useOutletContext();
-  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const { classData } = useOutletContext();
+    const [stream, setStream] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const { token } = theme.useToken();
 
-  // Dữ liệu giả lập cho timeline (Sau này sẽ lấy từ API Dashboard của lớp)
-  const activities = [
-    {
-      title: 'Giảng viên đã đăng một bài tập mới: "Báo cáo tiến độ Giai đoạn 1"',
-      time: '2 giờ trước',
-      icon: <FileTextOutlined style={{ color: '#1890ff' }} />,
-      type: 'assignment'
-    },
-    {
-      title: `Chào mừng đến với lớp ${classData?.name}`,
-      time: '1 ngày trước',
-      icon: <InfoCircleOutlined style={{ color: '#52c41a' }} />,
-      type: 'info'
-    }
-  ];
+    useEffect(() => {
+        const fetchStream = async () => {
+            setLoading(true);
+            try {
+                const { data } = await api.get(`/coursework/stream/class/${classData._id}`);
+                setStream(data);
+            } catch (error) {
+                console.error('Lỗi tải bảng tin');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-  return (
-    <div>
-      {/* BANNER LỚP HỌC */}
-      <div 
-        style={{
-            height: 200,
-            background: 'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)',
-            borderRadius: 8,
-            padding: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            marginBottom: 24,
-            color: 'white',
-            boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-        }}
-      >
-        <Title level={2} style={{ color: 'white', margin: 0 }}>{classData?.name}</Title>
-        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16 }}>
-            {classData?.semester} | Mã lớp: <Tag color="orange">{classData?.classCode}</Tag>
-        </Text>
-      </div>
+        if (classData?._id) fetchStream();
+    }, [classData]);
 
-      <Row gutter={24}>
-        {/* CỘT TRÁI: THÔNG BÁO NGẮN */}
-        <Col xs={24} md={6}>
-            <Card title="Sắp đến hạn" size="small" style={{ marginBottom: 24 }}>
-                <div style={{ textAlign: 'center', padding: '20px 0', color: '#8c8c8c' }}>
-                    <Text>Tuyệt vời, không có bài tập nào cần nộp gấp!</Text>
-                </div>
-                <Button type="link" block>Xem tất cả</Button>
-            </Card>
-            
-            <Card title="Thông tin" size="small">
-                <Paragraph ellipsis={{ rows: 3 }}>
-                    {classData?.description || "Không có mô tả thêm."}
-                </Paragraph>
-                <div style={{ marginTop: 10 }}>
-                    <Text type="secondary"><ReadOutlined /> {classData?.department || 'Khoa CNTT'}</Text>
-                </div>
-            </Card>
-        </Col>
+    if (loading) return <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>;
 
-        {/* CỘT PHẢI: BẢNG TIN HOẠT ĐỘNG */}
-        <Col xs={24} md={18}>
-            {/* Khu vực đăng bài (Chỉ GV - Placeholder) */}
+    return (
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            {/* Banner Lớp học */}
             <Card 
-                style={{ marginBottom: 24, boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}
-                styles={{ body: { display: 'flex', alignItems: 'center', gap: 15 } }}
+                style={{ 
+                    marginBottom: 24, 
+                    borderRadius: 12, 
+                    background: 'linear-gradient(135deg, #1890ff 0%, #10239e 100%)',
+                    border: 'none',
+                    minHeight: 150,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end'
+                }}
+                styles={{ body: { padding: '24px 32px' } }}
             >
-                <Avatar src={userInfo.avatarUrl} icon={<ReadOutlined />} size="large" style={{ backgroundColor: '#1890ff' }} />
-                <div 
-                    style={{ 
-                        flex: 1, 
-                        background: '#f0f2f5', 
-                        padding: '12px 20px', 
-                        borderRadius: 20, 
-                        color: '#8c8c8c',
-                        cursor: 'pointer' 
-                    }}
-                >
-                    {userInfo.role === 'lecturer' ? 'Thông báo nội dung nào đó cho lớp...' : 'Chia sẻ với lớp học...'}
-                </div>
+                <Title level={2} style={{ color: '#fff', margin: 0 }}>{classData?.name}</Title>
+                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16 }}>Giảng viên: {classData?.lecturer?.fullName}</Text>
             </Card>
 
-            {/* Danh sách hoạt động */}
-            <Title level={5} style={{ marginBottom: 16, color: '#595959' }}><BellOutlined /> Hoạt động gần đây</Title>
+            {/* Bảng tin (Stream) */}
+            <Title level={4} style={{ marginBottom: 16 }}>Hoạt động gần đây</Title>
             
             <List
-                itemLayout="horizontal"
-                dataSource={activities}
-                renderItem={item => (
-                    <Card style={{ marginBottom: 16 }} hoverable>
-                        <List.Item.Meta
-                            avatar={
-                                <div style={{ 
-                                    width: 40, height: 40, borderRadius: '50%', background: '#e6f7ff', 
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 
-                                }}>
-                                    {item.icon}
+                itemLayout="vertical"
+                dataSource={stream}
+                locale={{ emptyText: <Empty description="Chưa có hoạt động nào trong lớp" /> }}
+                renderItem={(item) => (
+                    <Card 
+                        hoverable 
+                        style={{ marginBottom: 16, borderRadius: 8, background: token.colorBgContainer }}
+                        styles={{ body: { padding: 20 } }}
+                        onClick={() => navigate(item.url)} // Bấm vào the card sẽ chuyển đến tab tương ứng
+                    >
+                        <div style={{ display: 'flex', gap: 16 }}>
+                            {/* Icon nhận diện loại hoạt động */}
+                            <div style={{ 
+                                width: 48, height: 48, borderRadius: '50%', 
+                                background: item.type === 'assignment' ? '#fff2e8' : '#e6f4ff',
+                                color: item.type === 'assignment' ? '#fa541c' : '#1677ff',
+                                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                fontSize: 24, flexShrink: 0
+                            }}>
+                                {item.type === 'assignment' ? <FileTextOutlined /> : <FolderOpenOutlined />}
+                            </div>
+
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div>
+                                        <Text type="secondary" style={{ fontSize: 13 }}>
+                                            {item.author?.fullName} đã đăng một {item.type === 'assignment' ? 'bài tập mới' : 'tài liệu mới'}
+                                        </Text>
+                                        <Title level={5} style={{ margin: '4px 0 8px 0', color: token.colorText }}>
+                                            {item.title}
+                                        </Title>
+                                    </div>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>
+                                        {dayjs(item.createdAt).fromNow()}
+                                    </Text>
                                 </div>
-                            }
-                            title={<a href="#">{item.title}</a>}
-                            description={item.time}
-                        />
+                                
+                                {item.description && (
+                                    <Paragraph type="secondary" ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
+                                        {item.description}
+                                    </Paragraph>
+                                )}
+                            </div>
+                        </div>
                     </Card>
                 )}
             />
-        </Col>
-      </Row>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default ClassStreamPage;

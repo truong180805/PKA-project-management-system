@@ -279,6 +279,54 @@ const getClassGradebook = async (req, res) => {
     }
 };
 
+const getClassStream = async (req, res) => {
+    try {
+        const { classId } = req.params;
+
+        // 1. Lấy thông tin lớp và giảng viên (để làm tác giả của bài đăng)
+        const classInfo = await Class.findById(classId).populate('lecturer', 'fullName avatarUrl');
+        if (!classInfo) return res.status(404).json({ message: 'Lớp không tồn tại' });
+
+        const stream = [];
+
+        // 2. Lấy tất cả Bài tập của lớp này
+        const assignments = await Assignment.find({ class: classId });
+        assignments.forEach(item => {
+            stream.push({
+                _id: `assignment_${item._id}`, // Tạo ID ảo để React render key không bị trùng
+                realId: item._id,
+                type: 'assignment',
+                title: item.title,
+                description: item.description,
+                createdAt: item.createdAt,
+                author: classInfo.lecturer,
+                url: `/classes/${classId}/assignments` // Link dẫn tới tab bài tập
+            });
+        });
+
+        // 3. Lấy tất cả Tài liệu của lớp này
+        const materials = await Material.find({ class: classId });
+        materials.forEach(item => {
+            stream.push({
+                _id: `material_${item._id}`,
+                realId: item._id,
+                type: 'material',
+                title: item.title,
+                description: item.description,
+                createdAt: item.createdAt,
+                author: classInfo.lecturer,
+                url: `/classes/${classId}/materials` // Link dẫn tới tab tài liệu
+            });
+        });
+
+        // 4. Sắp xếp mảng gom chung theo thời gian (Mới nhất lên đầu)
+        stream.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        res.json(stream);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports = {
     createAssignment, getAssignmentsByClass,
@@ -286,5 +334,6 @@ module.exports = {
     uploadMaterial, getMaterials,
     createTopic, getTopics, registerTopic,
     approveTopicProposal,
-    approveTopicRegistration, getClassGradebook
+    approveTopicRegistration, getClassGradebook,
+    getClassStream
 };

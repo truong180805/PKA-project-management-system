@@ -7,7 +7,7 @@ const {
     uploadMaterial, getMaterials,
     createTopic, getTopics, registerTopic,
     approveTopicProposal, approveTopicRegistration,
-    getClassGradebook
+    getClassGradebook, getClassStream
 } = require('../controllers/courseworkController');
 
 // --- ASSIGNMENTS ---
@@ -31,5 +31,7 @@ router.put('/topics/approve-proposal', protect, approveTopicProposal); // Duyệ
 router.put('/topics/approve-registration', protect, approveTopicRegistration); // Duyệt nhóm
 
 router.get('/grades/class/:classId', protect, getClassGradebook);
+
+router.get('/stream/class/:classId', protect, getClassStream);
 
 module.exports = router;
