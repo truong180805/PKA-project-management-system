@@ -40,6 +40,8 @@ const projectSchema = new mongoose.Schema({
         default: 'pending'
     },
 
+    joinRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
     progress: { type: Number, default: 0 },
     
     finalReportUrl: { type: String },

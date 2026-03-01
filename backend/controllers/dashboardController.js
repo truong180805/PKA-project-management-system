@@ -52,7 +52,7 @@ const getDashboardStats = async (req, res) => {
         } else {
             // --- THỐNG KÊ CHO SINH VIÊN ---
             // 1. Số lớp đang học
-            stats.totalClasses = await Class.countDocuments({ students: userId });
+            stats.totalClasses = await Class.countDocuments({ student: userId });
 
             // 2. Số nhóm tham gia & Tiến độ trung bình
             const myProjects = await Project.find({ members: userId }).populate('class', 'name');

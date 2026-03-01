@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Table, Button, Modal, Form, Input, Select, message, Tag, Space, Radio, Typography, Avatar, Tooltip, Popconfirm } from 'antd';
 import { PlusOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import api from '../../api';
@@ -17,6 +17,7 @@ const ClassGroupsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [topicMode, setTopicMode] = useState('select'); // 'select' hoặc 'propose'
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
   const isLecturer = userInfo.role === 'lecturer';
@@ -76,6 +77,24 @@ const ClassGroupsPage = () => {
     }
   };
 
+  // Xử lý Xóa nhóm
+  const handleDeleteGroup = async (groupId) => {
+      try {
+          await api.delete(`/projects/${groupId}`);
+          message.success('Đã xóa nhóm');
+          fetchData();
+      } catch (error) { message.error('Lỗi xóa nhóm'); }
+  }
+
+  // Xử lý Xin vào nhóm
+  const handleRequestJoin = async (groupId) => {
+      try {
+          await api.post(`/projects/${groupId}/request-join`);
+          message.success('Đã gửi yêu cầu xin vào nhóm');
+          fetchData();
+      } catch (error) { message.error(error.response?.data?.message || 'Lỗi gửi yêu cầu'); }
+  }
+
   // --- GIẢNG VIÊN: DUYỆT NHÓM ---
   const handleApprove = async (projectId, status) => {
       try {
@@ -89,14 +108,12 @@ const ClassGroupsPage = () => {
 
   // --- CẤU HÌNH CỘT BẢNG ---
   const columns = [
-    {
-      title: 'Tên Nhóm',
+    { title: 'Tên Nhóm',
       dataIndex: 'name',
       key: 'name',
       render: (text) => <Text strong style={{ color: '#1677ff' }}>{text}</Text>,
     },
-    {
-      title: 'Đề tài',
+    { title: 'Đề tài',
       dataIndex: 'topic',
       key: 'topic',
       render: (topic) => topic ? (
@@ -105,8 +122,7 @@ const ClassGroupsPage = () => {
           </Tooltip>
       ) : <Text type="secondary">Chưa có đề tài</Text>,
     },
-    {
-      title: 'Thành viên',
+    { title: 'Thành viên',
       dataIndex: 'members',
       key: 'members',
       render: (members) => (
@@ -119,8 +135,7 @@ const ClassGroupsPage = () => {
         </Avatar.Group>
       )
     },
-    {
-      title: 'Trạng thái',
+    { title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
@@ -129,22 +144,73 @@ const ClassGroupsPage = () => {
         return <Tag color={color}>{text}</Tag>;
       },
     },
-    {
-      title: 'Hành động',
+    { title: 'Hành động',
       key: 'action',
       render: (_, record) => {
-          if (isLecturer && record.status === 'pending') {
+          // 1. Nếu là Giảng viên
+          if (isLecturer) {
               return (
                   <Space>
-                      <Button size="small" type="primary" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record._id, 'approved')}>Duyệt</Button>
-                      <Popconfirm title="Từ chối nhóm này?" onConfirm={() => handleApprove(record._id, 'rejected')}>
-                          <Button size="small" danger icon={<CloseCircleOutlined />}>Từ chối</Button>
+                      {/* Cửa vào Kanban cho Giảng viên xem tiến độ */}
+                      <Button type="primary" size="small" ghost onClick={() => navigate(`/projects/${record._id}`)}>
+                          Truy cập
+                      </Button>
+                      
+                      {/* Nút duyệt nhóm (chỉ hiện khi pending) */}
+                      {record.status === 'pending' && (
+                          <Space>
+                              <Button size="small" type="primary" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record._id, 'approved')} />
+                              <Popconfirm title="Từ chối nhóm này?" onConfirm={() => handleApprove(record._id, 'rejected')}>
+                                  <Button size="small" danger icon={<CloseCircleOutlined />} />
+                              </Popconfirm>
+                          </Space>
+                      )}
+
+                      {/* Nút Xóa nhóm cho GV */}
+                      <Popconfirm title="Xóa toàn bộ nhóm này?" onConfirm={() => handleDeleteGroup(record._id)}>
+                          <Button size="small" danger type="text">Xóa</Button>
                       </Popconfirm>
                   </Space>
               )
           }
-          // Nút cho sinh viên xin vào nhóm (có thể mở rộng sau)
-          return null;
+
+          // 2. Nếu là Sinh viên
+          const isMember = record.members.some(m => m._id === userInfo._id);
+          const isLeader = record.leader === userInfo._id;
+          const hasRequested = record.joinRequests?.includes(userInfo._id);
+          const myActiveGroup = groups.find(g => g.members.some(m => m._id === userInfo._id));
+
+          if (isMember) {
+              return (
+                  <Space>
+                      {/* NÚT VÀO NHÓM CỦA CHÍNH MÌNH */}
+                      <Button type="primary" size="small" onClick={() => navigate(`/projects/${record._id}`)}>
+                          Vào Không gian làm việc
+                      </Button>
+
+                      {/* Trưởng nhóm có quyền Xóa nhóm nếu chưa làm gì */}
+                      {isLeader && record.status === 'pending' && (
+                          <Popconfirm title="Giải tán nhóm?" onConfirm={() => handleDeleteGroup(record._id)}>
+                              <Button size="small" danger>Giải tán</Button>
+                          </Popconfirm>
+                      )}
+                  </Space>
+              );
+          } else {
+              // NẾU CHƯA PHẢI LÀ THÀNH VIÊN
+              if (myActiveGroup) {
+                  // Đã có nhóm khác rồi -> Không cho xin vào nữa
+                  return <Text type="secondary" style={{ fontSize: 12 }}>Bạn đã có nhóm</Text>;
+              }
+              if (hasRequested) {
+                  return <Tag color="processing">Đang chờ duyệt...</Tag>;
+              }
+              return (
+                  <Button size="small" onClick={() => handleRequestJoin(record._id)}>
+                      Xin vào nhóm
+                  </Button>
+              );
+          }
       }
     },
   ];

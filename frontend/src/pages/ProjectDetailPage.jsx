@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Button, Divider, Progress, message, Spin, Popconfirm, Tooltip, Card, Row, Col, Tag, Avatar, Modal, Form, Input, Select, DatePicker, Dropdown, theme } from 'antd'; // Thêm theme
-import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, LinkOutlined, PlusOutlined, ClockCircleOutlined, EllipsisOutlined, UserOutlined, GithubOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import { Typography, Button, Divider, Progress, message, Popconfirm, Badge, Spin, List, Drawer, Tooltip, Card, Row, Col, Tag, Avatar, Modal, Form, Input, Select, DatePicker, Dropdown, theme } from 'antd'; // Thêm theme
+import { LogoutOutlined, TeamOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, LinkOutlined, PlusOutlined, ClockCircleOutlined, EllipsisOutlined, UserOutlined, GithubOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../api';
 
@@ -13,6 +13,7 @@ const ProjectDetailPage = () => {
     const navigate = useNavigate();
     const { token } = theme.useToken(); // Lấy màu động cho Darkmode
 
+    const [isMemberDrawerOpen, setIsMemberDrawerOpen] = useState(false);
     const [project, setProject] = useState(null);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -121,6 +122,38 @@ const ProjectDetailPage = () => {
         } catch (error) {
             message.error(error.response?.data?.message || 'Lỗi nộp bài');
         }
+    };
+
+    const handleRemoveMember = async (memberId) => {
+    try {
+        await api.delete(`/projects/${id}/members/${memberId}`);
+        message.success('Thao tác thành công');
+        
+        // Nếu tự rời nhóm thì đá văng ra ngoài danh sách nhóm
+        if (memberId === userInfo._id) {
+            navigate(-1);
+        } else {
+            fetchProjectDetail(); // Cập nhật lại list members
+        }
+    } catch (error) { message.error(error.response?.data?.message || 'Lỗi'); }
+    };
+
+    const handleJoinReq = async (reqUser, action) => {
+    try {
+        // Lấy chính xác ID (nếu reqUser là Object thì lấy _id, nếu là chuỗi thì giữ nguyên)
+        const targetUserId = typeof reqUser === 'object' ? reqUser._id : reqUser;
+
+        await api.put('/projects/handle-request', { 
+            projectId: id, 
+            userId: targetUserId, // Truyền đúng ID
+            action 
+        });
+
+        message.success(action === 'accept' ? 'Đã thêm thành viên' : 'Đã từ chối');
+        fetchData(); // Tải lại toàn bộ dữ liệu để cập nhật mảng members và joinRequests
+    } catch (error) { 
+        message.error(error.response?.data?.message || 'Lỗi duyệt'); 
+    }
     };
 
     const openEditModal = (task) => {
@@ -262,11 +295,28 @@ const ProjectDetailPage = () => {
                 {/* NÚT THAO TÁC */}
                 <Divider style={{ margin: '16px 0' }} />
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                    {userInfo._id === project?.leader?._id && (
-                        <Button icon={<GithubOutlined />} onClick={() => setIsSubmitModalOpen(true)}>
-                            {project?.finalReportUrl ? 'Cập nhật Link Báo Cáo' : 'Nộp Báo Cáo'}
-                        </Button>
+                    
+                    {/* Các nút của Trưởng Nhóm */}
+                    {userInfo._id === project?.leader?._id ? (
+                        <>
+                            <Button icon={<TeamOutlined />} onClick={() => setIsMemberDrawerOpen(true)}>
+                                Quản lý thành viên 
+                                {/* Hiện chấm đỏ nếu có người xin vào */}
+                                {project?.joinRequests?.length > 0 && <Badge dot style={{marginLeft: 5}}/>}
+                            </Button>
+                            <Button icon={<GithubOutlined />} onClick={() => setIsSubmitModalOpen(true)}>
+                                Nộp Báo Cáo
+                            </Button>
+                        </>
+                    ) : (
+                        /* Nút Rời Nhóm cho thành viên bình thường (GV không thấy nút này) */
+                        userInfo.role !== 'lecturer' && (
+                            <Popconfirm title="Bạn chắc chắn muốn rời nhóm?" onConfirm={() => handleRemoveMember(userInfo._id)}>
+                                <Button danger icon={<LogoutOutlined />}>Rời Nhóm</Button>
+                            </Popconfirm>
+                        )
                     )}
+
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTask(null); form.resetFields(); setIsTaskModalOpen(true); }}>
                         Thêm Công Việc Mới
                     </Button>
@@ -315,6 +365,62 @@ const ProjectDetailPage = () => {
                     <Button type="primary" htmlType="submit" block>Xác nhận nộp</Button>
                 </Form>
             </Modal>
+            <Drawer 
+                title="Quản lý thành viên" 
+                placement="right" 
+                onClose={() => setIsMemberDrawerOpen(false)} 
+                open={isMemberDrawerOpen}
+            >
+                {/* Danh sách xin vào */}
+                {project?.joinRequests?.length > 0 && (
+                    <div style={{ marginBottom: 24 }}>
+                        <Text type="warning" strong>Yêu cầu tham gia ({project.joinRequests.length})</Text>
+                        <List
+                            itemLayout="horizontal"
+                            dataSource={project.joinRequests}
+                            renderItem={(reqUser) => (
+                                <List.Item
+                                    actions={[
+                                        <Button size="small" type="primary" onClick={() => handleJoinReq(reqUser, 'accept')}>Nhận</Button>,
+                                        <Button size="small" danger type="text" onClick={() => handleJoinReq(reqUser, 'reject')}>Từ chối</Button>
+                                    ]}
+                                >
+                                    <List.Item.Meta
+                                        avatar={<Avatar icon={<UserOutlined />} />}
+                                        title={<Text>{reqUser.fullName}</Text>} // Ở DB thực tế bạn nên populate joinRequests để lấy tên
+                                    />
+                                </List.Item>
+                            )}
+                        />
+                        <Divider />
+                    </div>
+                )}
+
+                {/* Danh sách thành viên hiện tại */}
+                <Text strong>Thành viên chính thức ({project?.members?.length})</Text>
+                <List
+                    itemLayout="horizontal"
+                    dataSource={project?.members}
+                    renderItem={(member) => (
+                        <List.Item
+                            actions={
+                                member._id === project.leader._id 
+                                ? [<Tag color="gold">Leader</Tag>]
+                                : [
+                                    <Popconfirm title="Kick người này?" onConfirm={() => handleRemoveMember(member._id)}>
+                                        <Button size="small" danger type="text">Kick</Button>
+                                    </Popconfirm>
+                                  ]
+                            }
+                        >
+                            <List.Item.Meta
+                                avatar={<Avatar src={member.avatarUrl} icon={<UserOutlined />} />}
+                                title={member.fullName}
+                            />
+                        </List.Item>
+                    )}
+                />
+            </Drawer>
         </div>
     );
 };

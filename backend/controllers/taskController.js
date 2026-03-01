@@ -75,15 +75,17 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
     try {
-        await Task.findByIdAndDelete(req.params.id);
+        const task = await Task.findByIdAndDelete(req.params.id);
 
-        if (task) {
+        if (!task) {
+            return res.status(404).json({ message: 'Không tìm thấy task' });
+        }
+
         await updateProjectProgress(task.project);
-        };
 
-        res.json({ message: 'Đã xóa task'});
-    } catch (erro) {
-        res.status(5000).json({ message: error.message});
+        res.json({ message: 'Đã xóa task' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
 

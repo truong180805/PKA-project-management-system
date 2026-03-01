@@ -73,7 +73,8 @@ const getProjectDetails = async (req, res) => {
         const { id } = req.params;
         const project = await Project.findById(id)
             .populate('leader', 'fullName email')
-            .populate('members', 'fullName email studentId avatarUrl');
+            .populate('members', 'fullName email studentId avatarUrl')
+            .populate('joinRequests', 'fullName avatarUrl');
 
         if(!project) return res.status(404).json({ message: 'Không tìm thấy nhóm'});
 
@@ -194,6 +195,126 @@ const getSupervisedProjects = async (req, res) => {
   }
 };
 
+const updateProject = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+
+        // Chỉ Leader hoặc Giảng viên mới được sửa
+        if (project.leader.toString() !== req.user._id.toString() && req.user.role !== 'lecturer') {
+            return res.status(403).json({ message: 'Bạn không có quyền sửa nhóm này' });
+        }
+
+        project.name = req.body.name || project.name;
+        project.description = req.body.description || project.description;
+        
+        await project.save();
+        res.json(project);
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const deleteProject = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+
+        if (project.leader.toString() !== req.user._id.toString() && req.user.role !== 'lecturer') {
+            return res.status(403).json({ message: 'Bạn không có quyền xóa nhóm này' });
+        }
+
+        // Nếu xóa nhóm thì phải xóa luôn các Task thuộc về nhóm này
+        const Task = require('../models/taskModel');
+        await Task.deleteMany({ project: project._id });
+
+        await project.deleteOne();
+        res.json({ message: 'Đã xóa nhóm thành công' });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const requestToJoin = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+
+        const existingProject = await Project.findOne({ class: project.class, members: req.user._id });
+        if (existingProject) {
+            return res.status(400).json({ message: 'Bạn đã là thành viên của một nhóm khác trong lớp này!' });
+        }
+
+       if (project.joinRequests.includes(req.user._id)) {
+            return res.status(400).json({ message: 'Bạn đã gửi yêu cầu rồi, vui lòng chờ duyệt' });
+        }
+
+        project.joinRequests.push(req.user._id);
+        await project.save();
+        res.json({ message: 'Đã gửi yêu cầu tham gia' });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const handleJoinRequest = async (req, res) => {
+    try {
+        const { projectId, userId, action } = req.body;
+        const project = await Project.findById(projectId);
+
+        if (!project) return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+        if (project.leader.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Chỉ Trưởng nhóm mới có quyền này' });
+        }
+
+        // --- SỬA LỖI Ở ĐÂY: Đảm bảo lấy đúng chuỗi ID kể cả khi Frontend gửi nhầm Object ---
+        const targetUserId = typeof userId === 'object' ? userId._id : userId;
+
+        if (action === 'accept') {
+            const alreadyInGroup = await Project.findOne({ class: project.class, members: targetUserId });
+            if (alreadyInGroup) {
+                // Xóa khỏi danh sách chờ vì họ đã có nhóm
+                project.joinRequests = project.joinRequests.filter(id => id.toString() !== targetUserId.toString());
+                await project.save();
+                return res.status(400).json({ message: 'Người này đã gia nhập nhóm khác mất rồi' });
+            }
+            project.members.push(targetUserId); // Cho vào nhóm
+        }
+
+        // --- SỬA LỖI Ở ĐÂY: Dùng targetUserId.toString() để filter chính xác ---
+        project.joinRequests = project.joinRequests.filter(id => id.toString() !== targetUserId.toString());
+        await project.save();
+        
+        res.json({ message: action === 'accept' ? 'Đã thêm thành viên' : 'Đã từ chối' });
+    } catch (error) { 
+        res.status(500).json({ message: error.message }); 
+    }
+};
+
+const removeMember = async (req, res) => {
+    try {
+        const { projectId, memberId } = req.params;
+        const project = await Project.findById(projectId);
+        
+        if (!project) return res.status(404).json({ message: 'Không tìm thấy nhóm' });
+
+        const isLeader = project.leader.toString() === req.user._id.toString();
+        const isSelf = req.user._id.toString() === memberId; // Tự rời nhóm
+
+        if (!isLeader && !isSelf) {
+            return res.status(403).json({ message: 'Không có quyền thực hiện hành động này' });
+        }
+
+        if (project.leader.toString() === memberId) {
+            return res.status(400).json({ message: 'Trưởng nhóm không thể rời đi. Hãy giải tán nhóm!' });
+        }
+
+        // Xóa khỏi mảng members
+        project.members = project.members.filter(m => m.toString() !== memberId);
+        await project.save();
+
+        // (Tùy chọn) Gỡ task của người này ra để không bị lỗi hiển thị Kanban
+        const Task = require('../models/taskModel');
+        await Task.updateMany({ project: projectId, assignedTo: memberId }, { $unset: { assignedTo: "" } });
+
+        res.json({ message: isSelf ? 'Đã rời nhóm' : 'Đã xóa thành viên khỏi nhóm' });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 module.exports = {
     createProject,
     getProjectsByClass,
@@ -202,5 +323,7 @@ module.exports = {
     getProjectDetails,
     submitProject,
     getMyProjects,
-    getSupervisedProjects
+    getSupervisedProjects,
+    updateProject, deleteProject, requestToJoin,
+    handleJoinRequest, removeMember
 };
