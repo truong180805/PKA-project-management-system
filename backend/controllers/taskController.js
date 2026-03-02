@@ -44,32 +44,18 @@ const getTaskByProject = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-    try{
-        const {id} = req.params;
-        const { title, description, status, submissionLink, assignedTo, dueDate } = req.body;
-
-        const task = await Task.findById(id);
-        if (!task) return res.status(404).json({ message: 'Task không tồn tại' });
-
-        if (title) task.title = title;
-        if (description) task.description = description;
-        if (status) task.status = status;
-        if (submissionLink) task.submissionLink = submissionLink;
-        if (assignedTo) task.assignedTo = assignedTo;
-        if (dueDate) task.dueDate = dueDate;
-
+    try {
+        const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        
         if (task) {
-        await updateProjectProgress(task.project);
-        };
-
-        await task.save();
+            // Lấy ID dự án chính xác từ Task vừa cập nhật
+            const projId = task.project || task.projectId; 
+            await updateProjectProgress(projId);
+        }
         
-        // Populate lại thông tin người được gán để trả về frontend hiển thị ngay
-        const updatedTask = await Task.findById(id).populate('assignedTo', 'fullName avatarUrl');
-        
-        res.json(updatedTask);
-    } catch(error) {
-        res.status(500).json({ message: error.message });
+        res.json(task);
+    } catch (error) { 
+        res.status(500).json({ message: error.message }); 
     }
 };
 
@@ -111,18 +97,39 @@ const submitProject = async (req, res) => {
   }
 };
 
-const updateProjectProgress = async (projectId) => {
-    // 1. Đếm tổng số task của nhóm này
-    const totalTasks = await Task.countDocuments({ project: projectId });
+const updateProjectProgress = async (projectID) => {
+    if (!projectID) return;
+
+    // 1. Dùng $or để đếm đúng dù Model của bạn đặt tên là 'project' hay 'projectId'
+    const totalTasks = await Task.countDocuments({ 
+        $or: [{ project: projectID }, { projectId: projectID }] 
+    });
     
-    // 2. Đếm số task đã hoàn thành (giả sử trạng thái hoàn thành là 'done')
-    const completedTasks = await Task.countDocuments({ project: projectId, status: 'completed' });
-    
-    // 3. Tính % (tránh lỗi chia cho 0)
+    const completedTasks = await Task.countDocuments({ 
+        $or: [{ project: projectID }, { projectId: projectID }], 
+        status: 'completed' // Đảm bảo status bạn lưu là 'completed'
+    });
+
+    // 2. Tính % tiến độ
     const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-    
-    // 4. Cập nhật vào DB
-    await Project.findByIdAndUpdate(projectId, { progress });
+
+    // 3. Tự động chuyển đổi trạng thái Hoàn Thành
+    const project = await Project.findById(projectID);
+    if (project) {
+        let newStatus = project.status;
+        
+        if (progress === 100 && project.status === 'approved') {
+            newStatus = 'completed'; // Xong 100% -> Hoàn thành
+        } else if (progress < 100 && project.status === 'completed') {
+            newStatus = 'approved'; // Bị lùi tiến độ -> Quay lại Đang thực hiện
+        }
+
+        // Cập nhật vào Database
+        await Project.findByIdAndUpdate(projectID, { 
+            progress: progress,
+            status: newStatus 
+        });
+    }
 };
 
 module.exports = {

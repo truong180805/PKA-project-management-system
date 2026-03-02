@@ -57,24 +57,31 @@ const ProjectDetailPage = () => {
     // --- CẬP NHẬT TRẠNG THÁI TASK ---
     const handleChangeStatus = async (taskId, newStatus) => {
         try {
-            // 1. Cập nhật UI mảng Task ngay lập tức
+            // 1. Cập nhật UI Task
             const updatedTasks = tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t);
             setTasks(updatedTasks);
 
-            // 2. TỰ TÍNH TOÁN % TIẾN ĐỘ TRÊN FRONTEND (UI phản hồi ngay lập tức)
+            // 2. Tính % tiến độ
             const totalTasks = updatedTasks.length;
             const completedTasks = updatedTasks.filter(t => t.status === 'completed' || t.status === 'submitted').length;
             const newProgress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-            
-            // Ép thanh Progress chạy ngay tức thì
-            setProject(prev => ({ ...prev, progress: newProgress }));
 
+            // 3. ÉP CẬP NHẬT CẢ TIẾN ĐỘ VÀ TRẠNG THÁI TRÊN GIAO DIỆN
+            setProject(prev => {
+                let newStatusLabel = prev.status;
+                if (newProgress === 100 && prev.status === 'approved') newStatusLabel = 'completed';
+                else if (newProgress < 100 && prev.status === 'completed') newStatusLabel = 'approved';
+                
+                return { ...prev, progress: newProgress, status: newStatusLabel };
+            });
+
+            // 4. Gọi API
             await api.put(`/tasks/${taskId}`, { status: newStatus });
-            
             message.success('Đã cập nhật trạng thái');
+            
         } catch (error) {
             message.error('Lỗi cập nhật');
-            fetchData(); 
+            fetchData();
         }
     };
 
@@ -266,8 +273,8 @@ const ProjectDetailPage = () => {
                             <Text type="secondary" style={{ marginRight: 16 }}>
                                 <UserOutlined /> Trưởng nhóm: <Text strong>{project?.leader?.fullName}</Text>
                             </Text>
-                            <Tag color={project?.status === 'approved' ? 'success' : 'warning'}>
-                                {project?.status === 'approved' ? 'Đang thực hiện' : 'Chờ duyệt'}
+                            <Tag color={project?.status === 'completed' ? 'success' : project?.status === 'approved' ? 'processing' : 'warning'}>
+                                {project?.status === 'completed' ? 'Hoàn thành' : project?.status === 'approved' ? 'Đang thực hiện' : 'Chờ duyệt'}
                             </Tag>
                         </div>
                         
