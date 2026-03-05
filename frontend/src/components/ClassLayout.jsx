@@ -64,7 +64,7 @@ const ClassLayout = () => {
   if (loading) return <div style={{ textAlign: 'center', padding: 50 }}><Spin size="large" /></div>;
 
   return (
-    <Layout style={{ minHeight: 'calc(100vh - 64px)' }}> {/* Trừ đi chiều cao Header chính */}
+    <Layout style={{ minHeight: 'calc(100vh - 64px)' }}>
       
       {/* SIDEBAR LỚP HỌC (Menu con) */}
       <Sider width={220} style={{ background: colorBgContainer }}>

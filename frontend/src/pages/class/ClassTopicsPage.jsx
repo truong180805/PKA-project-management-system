@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Button, Card, List, Typography, Tag, Modal, Form, Input, InputNumber, message, Progress, Tabs, Badge, Alert, Popconfirm } from 'antd';
-import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons';
+import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, UserOutlined, TeamOutlined } from '@ant-design/icons';
 import api from '../../api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -50,21 +50,7 @@ const ClassTopicsPage = () => {
     } catch (error) { message.error('Thất bại'); }
   };
 
-  const handleRegisterTopic = async (topicId) => {
-    if (!myProject) {
-        message.warning('Vui lòng tạo nhóm ở tab "Nhóm" trước!');
-        return navigate(`/classes/${classData._id}/groups`);
-    }
-    if (myProject.leader._id !== userInfo._id) return message.warning('Chỉ nhóm trưởng mới được đăng ký');
-
-    try {
-      await api.post('/coursework/topics/register', { topicId, projectId: myProject._id });
-      message.success('Đã gửi yêu cầu đăng ký!');
-      fetchData();
-    } catch (error) { message.error(error.response?.data?.message); }
-  };
-
-  // GV: Duyệt đề xuất đề tài
+  // GV: Duyệt đề xuất đề tài mới do sinh viên tự nghĩ ra
   const handleApproveProposal = async (topicId, isApproved) => {
       try {
           await api.put('/coursework/topics/approve-proposal', { topicId, isApproved });
@@ -73,23 +59,15 @@ const ClassTopicsPage = () => {
       } catch (error) {}
   }
 
-  // GV: Duyệt nhóm vào đề tài
-  const handleApproveGroup = async (topicId, projectId, isApproved) => {
-      try {
-          await api.put('/coursework/topics/approve-registration', { topicId, projectId, isApproved });
-          message.success('Đã cập nhật trạng thái nhóm');
-          fetchData();
-      } catch (error) {}
-  }
-
   // --- RENDER ITEM ---
   const renderTopicItem = (item) => {
-      const isFull = item.registeredGroups.length >= item.maxGroups;
-      const percent = Math.round((item.registeredGroups.length / item.maxGroups) * 100);
+      // Dùng biến count mới từ Backend gửi lên
+      const currentCount = item.registeredGroupCount || 0; 
+      const isFull = currentCount >= item.maxGroups;
+      const percent = Math.round((currentCount / item.maxGroups) * 100);
       
-      // Check trạng thái của nhóm mình đối với topic này
-      const isRegistered = myProject && item.registeredGroups.some(g => g._id === myProject._id);
-      const isPending = myProject && item.requestQueue.some(g => g._id === myProject._id);
+      // Kiểm tra xem nhóm của sinh viên này có đang làm đề tài này không
+      const isMyTopic = myProject && (myProject.topic?._id === item._id || myProject.topic === item._id);
 
       return (
         <List.Item>
@@ -105,20 +83,25 @@ const ClassTopicsPage = () => {
                 </div>
             }
             extra={
-                isRegistered ? <Tag color="green">Nhóm đã chọn</Tag> :
-                isPending ? <Tag color="orange" icon={<ClockCircleOutlined />}>Đang chờ duyệt</Tag> :
-                isFull ? <Tag color="red">Đã đầy</Tag> : <Tag color="blue">Còn chỗ</Tag>
+                isMyTopic ? <Tag color="green">Nhóm bạn đang làm</Tag> :
+                isFull ? <Tag color="red">Đã đủ số nhóm</Tag> : <Tag color="blue">Còn trống</Tag>
             }
             actions={
+                // NẾU LÀ SINH VIÊN: Chỉ đường cho họ sang Tab Nhóm để đăng ký
                 !isLecturer ? [
-                    <Button 
-                        type="primary" 
-                        disabled={isFull || isRegistered || isPending || !myProject} 
-                        onClick={() => handleRegisterTopic(item._id)}
-                    >
-                        {isRegistered ? 'Đã tham gia' : isPending ? 'Đang chờ' : 'Đăng ký'}
-                    </Button>
-                ] : [] // GV không có nút action ở đây, mà quản lý bên trong
+                    isMyTopic ? (
+                        <Button type="primary" onClick={() => navigate(`/projects/${myProject._id}`)}>Vào không gian làm việc</Button>
+                    ) : (
+                        <Button 
+                            type="dashed" 
+                            disabled={isFull || myProject} // Nếu đầy hoặc đã có nhóm thì khóa
+                            icon={<TeamOutlined />}
+                            onClick={() => navigate(`/classes/${classData._id}/groups`)}
+                        >
+                            {myProject ? 'Bạn đã có nhóm' : 'Tạo nhóm để chọn đề tài này'}
+                        </Button>
+                    )
+                ] : [] 
             }
           >
             <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ height: 44 }}>{item.description || "Không có mô tả"}</Paragraph>
@@ -126,36 +109,16 @@ const ClassTopicsPage = () => {
             {/* Tiến độ đăng ký */}
             <div style={{ marginTop: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <Text type="secondary">Số lượng nhóm: {item.registeredGroups.length}/{item.maxGroups}</Text>
+                    <Text type="secondary">Đang thực hiện: {currentCount}/{item.maxGroups} Nhóm</Text>
                 </div>
-                <Progress percent={percent} showInfo={false} status={isFull ? "exception" : "active"} size="small" />
+                <Progress percent={percent} showInfo={false} strokeColor={isFull ? '#ff4d4f' : '#1677ff'} size="small" />
             </div>
 
-            {/* PHẦN QUẢN LÝ CỦA GV */}
             {isLecturer && (
-                <div style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
-                    {/* 1. Danh sách chờ duyệt */}
-                    {item.requestQueue.length > 0 && (
-                        <Alert 
-                            message={`Có ${item.requestQueue.length} nhóm đang chờ duyệt`}
-                            type="warning"
-                            style={{ marginBottom: 8 }}
-                            action={
-                                <Popconfirm 
-                                    title="Duyệt nhóm đầu tiên?" 
-                                    onConfirm={() => handleApproveGroup(item._id, item.requestQueue[0]._id, true)}
-                                    cancelText="Từ chối"
-                                    onCancel={() => handleApproveGroup(item._id, item.requestQueue[0]._id, false)}
-                                >
-                                    <Button size="small" type="primary">Xử lý</Button>
-                                </Popconfirm>
-                            }
-                        />
-                    )}
-                    <Text style={{fontSize: 12}}>Đã duyệt: </Text>
-                    {item.registeredGroups.length > 0 ? (
-                        item.registeredGroups.map(g => <Tag key={g._id}>{g.name}</Tag>)
-                    ) : <Text type="secondary" style={{fontSize: 12}}>Chưa có nhóm</Text>}
+                <div style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 12, textAlign: 'center' }}>
+                    <Text type="secondary" style={{fontSize: 12}}>
+                        * Quản lý & duyệt nhóm thực hiện đề tài này tại <a onClick={() => navigate(`/classes/${classData._id}/groups`)}>Tab Nhóm</a>
+                    </Text>
                 </div>
             )}
           </Card>
@@ -163,7 +126,6 @@ const ClassTopicsPage = () => {
       );
   };
 
-  // Phân loại Topics
   const approvedTopics = topics.filter(t => t.status === 'approved');
   const pendingTopics = topics.filter(t => t.status === 'pending');
 
@@ -172,12 +134,12 @@ const ClassTopicsPage = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Title level={3} style={{margin: 0}}>Đề tài Đồ án</Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
-            {isLecturer ? 'Tạo Đề tài' : 'Đề xuất Đề tài'}
+            {isLecturer ? 'Tạo Đề tài' : 'Đề xuất Đề tài mới'}
         </Button>
       </div>
 
       {!isLecturer && !myProject && (
-          <Alert title="Lưu ý" description="Bạn cần tạo nhóm trước khi đăng ký hoặc đề xuất đề tài." type="info" showIcon style={{marginBottom: 16}} />
+          <Alert message="Hướng dẫn đăng ký" description="Để đăng ký đề tài, vui lòng sang tab 'Nhóm' để tạo nhóm và chọn đề tài bạn muốn làm." type="info" showIcon style={{marginBottom: 16}} />
       )}
 
       <Tabs defaultActiveKey="1" items={[
@@ -227,63 +189,17 @@ const ClassTopicsPage = () => {
           }
       ]} />
 
-        <Modal
-            title={isLecturer ? "Tạo Đề tài mới" : "Đề xuất Đề tài với Giảng viên"}
-            open={isModalOpen}
-            onCancel={() => {
-                setIsModalOpen(false);
-                form.resetFields();
-            }}
-            footer={null}
-            destroyOnHidden
-            >
-            <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleCreateTopic}
-            >
-                <Form.Item
-                name="name"
-                label="Tên đề tài"
-                rules={[
-                    { required: true, message: 'Vui lòng nhập tên đề tài' },
-                    { whitespace: true }
-                ]}
-                >
-                <Input />
-                </Form.Item>
-
-                <Form.Item
-                name="description"
-                label="Mô tả"
-                >
-                <Input.TextArea rows={4} />
-                </Form.Item>
-
+        {/* MODAL GIỮ NGUYÊN */}
+        <Modal title={isLecturer ? "Tạo Đề tài mới" : "Đề xuất Đề tài với Giảng viên"} open={isModalOpen} onCancel={() => { setIsModalOpen(false); form.resetFields(); }} footer={null} destroyOnHidden>
+            <Form form={form} layout="vertical" onFinish={handleCreateTopic}>
+                <Form.Item name="name" label="Tên đề tài" rules={[{ required: true, message: 'Vui lòng nhập tên đề tài' }, { whitespace: true }]}><Input /></Form.Item>
+                <Form.Item name="description" label="Mô tả"><Input.TextArea rows={4} /></Form.Item>
                 {isLecturer && (
-                <Form.Item
-                    name="maxGroups"
-                    label="Số nhóm tối đa"
-                    initialValue={1}
-                    rules={[{ required: true }]}
-                >
-                    <InputNumber
-                    min={1}
-                    max={10}
-                    style={{ width: '100%' }}
-                    />
+                <Form.Item name="maxGroups" label="Số nhóm tối đa" initialValue={1} rules={[{ required: true }]}>
+                    <InputNumber min={1} max={10} style={{ width: '100%' }} />
                 </Form.Item>
                 )}
-
-                <Form.Item>
-                <Button
-                    type="primary"
-                    htmlType="submit"
-                    block
-                >
-                    Gửi
-                </Button>
-                </Form.Item>
+                <Form.Item><Button type="primary" htmlType="submit" block>Gửi</Button></Form.Item>
             </Form>
         </Modal>
     </div>

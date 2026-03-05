@@ -71,33 +71,13 @@ const SettingsPage = () => {
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
       <Title level={2}>Cài đặt hệ thống</Title>
       
-      <Card title="Giao diện & Ngôn ngữ" style={{ marginBottom: 24 }}>
+      <Card title="Giao diện" style={{ marginBottom: 24 }}>
         <List>
-            {/* DARK MODE SWITCH */}
             <List.Item extra={<Switch checked={isDarkMode} onChange={toggleTheme} />}>
                 <List.Item.Meta 
                     avatar={<BulbOutlined style={{ fontSize: 24 }} />} 
                     title="Chế độ tối (Dark Mode)" 
                     description="Chuyển đổi giao diện nền tối giúp bảo vệ mắt" 
-                />
-            </List.Item>
-
-            {/* LANGUAGE SELECT */}
-            <List.Item extra={
-                <Select 
-                    value={language} 
-                    style={{ width: 120 }} 
-                    onChange={handleLanguageChange}
-                    options={[
-                        { value: 'vi', label: 'Tiếng Việt' }, 
-                        { value: 'en', label: 'English' }
-                    ]} 
-                />
-            }>
-                <List.Item.Meta 
-                    avatar={<GlobalOutlined style={{ fontSize: 24 }} />} 
-                    title="Ngôn ngữ" 
-                    description="Ngôn ngữ hiển thị của hệ thống" 
                 />
             </List.Item>
         </List>

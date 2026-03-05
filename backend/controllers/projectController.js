@@ -47,6 +47,10 @@ const createProject = async (req, res) => {
       status: 'pending' // Nhóm luôn chờ GV duyệt
     });
 
+    await Topic.findByIdAndUpdate(finalTopicId, {
+        $push: { registeredGroups: project._id }
+    });
+
     res.status(201).json(project);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -166,6 +170,7 @@ const getMyProjects = async (req, res) => {
     const projects = await Project.find({ members: req.user._id })
       .populate('class', 'name classCode') // Lấy thêm tên lớp để hiển thị
       .populate('leader', 'fullName')
+      .populate('members', 'fullName avatarUrl')
       .sort({ updatedAt: -1 });
 
     res.json(projects);

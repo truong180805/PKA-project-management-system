@@ -101,7 +101,7 @@ const DashboardPage = () => {
                             locale={{ emptyText: 'Tuyệt vời! Không có nhóm nào đang chờ duyệt.' }}
                             renderItem={item => (
                                 <List.Item
-                                    actions={[<Button type="primary" size="small" onClick={() => navigate('/projects')}>Đi tới Duyệt</Button>]}
+                                    actions={[<Button type="primary" size="small" onClick={() => navigate(`/classes/${item.class?._id}/groups`)}>Đi tới Duyệt</Button>]}
                                 >
                                     <List.Item.Meta
                                         title={<Text strong>{item.name}</Text>}

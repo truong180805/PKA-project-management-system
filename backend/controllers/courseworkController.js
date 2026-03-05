@@ -127,13 +127,25 @@ const createTopic = async (req, res) => {
 
 const getTopics = async (req, res) => {
     try {
-        const list = await Topic.find({ class: req.params.classId })
-            .populate('registeredGroups', 'name')
-            .populate('requestQueue', 'name') // Lấy tên nhóm đang chờ
-            .populate('createdBy', 'fullName') // Lấy tên người tạo
-            .sort({ createdAt: -1 });
-        res.json(list);
-    } catch (error) { res.status(500).json({ message: error.message }); }
+        // Dùng .lean() để có thể thêm thuộc tính động vào object trả về
+        const topics = await Topic.find({ class: req.params.classId })
+            .populate('createdBy', 'fullName')
+            .sort({ createdAt: -1 })
+            .lean(); 
+
+        // LOGIC NHẤT QUÁN: Đếm trực tiếp số Nhóm (Project) ĐÃ ĐƯỢC DUYỆT đang dùng đề tài này
+        for (let topic of topics) {
+            const count = await Project.countDocuments({
+                topic: topic._id,
+                status: 'approved' // Chỉ đếm nhóm đã được GV duyệt
+            });
+            topic.registeredGroupCount = count; // Gắn con số này vào để Frontend hiện ra
+        }
+
+        res.json(topics);
+    } catch (error) { 
+        res.status(500).json({ message: error.message }); 
+    }
 };
 
 const registerTopic = async (req, res) => {
@@ -190,18 +202,24 @@ const approveTopicRegistration = async (req, res) => {
         topic.requestQueue = topic.requestQueue.filter(pid => pid.toString() !== projectId);
 
         if (isApproved) {
-             // Check full
-             if (topic.registeredGroups.length >= topic.maxGroups) {
-                 return res.status(400).json({ message: 'Đề tài đã đầy!' });
-             }
-             
-             topic.registeredGroups.push(projectId);
-             if(topic.registeredGroups.length >= topic.maxGroups) topic.isFull = true;
-             
-             // Cập nhật tên Project theo Topic luôn cho đồng bộ
-             const project = await Project.findById(projectId);
-             project.description = `[Đề tài: ${topic.name}] ${project.description || ''}`;
-             await project.save();
+
+            // Check full
+            if (topic.registeredGroups.length >= topic.maxGroups) {
+                return res.status(400).json({ message: 'Đề tài đã đầy!' });
+            }
+
+            // Check trùng trước khi push
+            if (!topic.registeredGroups.some(id => id.toString() === projectId)) {
+                topic.registeredGroups.push(projectId);
+            }
+
+            if (topic.registeredGroups.length >= topic.maxGroups) {
+                topic.isFull = true;
+            }
+
+            const project = await Project.findById(projectId);
+            project.description = `[Đề tài: ${topic.name}] ${project.description || ''}`;
+            await project.save();
         }
 
         await topic.save();

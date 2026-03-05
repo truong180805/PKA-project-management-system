@@ -37,8 +37,6 @@ const ProjectsPage = () => {
     fetchProjects();
   }, [isLecturer]);
 
-
-  // Lấy danh sách các lớp duy nhất để tạo Dropdown Filter
   const uniqueClasses = [...new Set(projects.map(p => p.class?.name))].filter(Boolean);
 
   const filteredProjects = projects.filter(item => {
