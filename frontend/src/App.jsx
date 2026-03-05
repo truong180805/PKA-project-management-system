@@ -18,6 +18,10 @@ import SupportPage from './pages/SupportPage';
 import InboxPage from './pages/InboxPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AdminLayout from './components/AdminLayout';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminClassesPage from './pages/admin/AdminClassesPage';
 
 import ClassLayout from './components/ClassLayout';
 import ClassStreamPage from './pages/class/ClassStreamPage';
@@ -70,6 +74,13 @@ const AppContent = () => {
             <Route path="grades" element={<ClassGradesPage />} />
         </Route>
       </Route>
+
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="classes" element={<AdminClassesPage />} />
+      </Route>
+      
     </Routes>
     </ConfigProvider>
   );

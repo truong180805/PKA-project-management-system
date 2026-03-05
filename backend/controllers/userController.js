@@ -82,8 +82,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-
-
 const updateUserProfile = async (req, res) => {
   try {
     // Tìm user theo ID trong token
@@ -226,10 +224,53 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+    try {
+        // Có thể thêm tính năng tìm kiếm hoặc lọc theo role
+        const keyword = req.query.keyword ? {
+            $or: [
+                { fullName: { $regex: req.query.keyword, $options: 'i' } },
+                { email: { $regex: req.query.keyword, $options: 'i' } }
+            ]
+        } : {};
+
+        const users = await User.find(keyword).select('-password').sort({ createdAt: -1 });
+        res.json(users);
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const updateUserRole = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+
+        user.role = req.body.role || user.role;
+        // Có thể sửa thêm các trường khác nếu cần
+        
+        const updatedUser = await user.save();
+        res.json({ message: 'Cập nhật thành công', user: updatedUser });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+
+        if (user.role === 'admin') {
+            return res.status(400).json({ message: 'Không thể xóa tài khoản Admin hệ thống' });
+        }
+
+        await user.deleteOne();
+        res.json({ message: 'Đã xóa người dùng' });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     updateUserProfile,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    getAllUsers, updateUserRole, deleteUser
 };

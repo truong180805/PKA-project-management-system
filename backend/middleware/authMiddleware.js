@@ -25,4 +25,12 @@ const protect = async (req, res, next ) => {    let token;
     }
 };
 
-module.exports = { protect };
+const admin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next(); // Cho phép đi tiếp
+  } else {
+    res.status(403).json({ message: 'Không có quyền truy cập! Cần tài khoản Quản trị viên.' });
+  }
+};
+
+module.exports = { protect, admin };

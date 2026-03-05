@@ -159,12 +159,58 @@ const approveStudent = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-}
+};
+
+// --- ADMIN: LẤY TOÀN BỘ LỚP HỌC TRÊN HỆ THỐNG ---
+const getAllClassesAdmin = async (req, res) => {
+    try {
+        // Lấy tất cả, không cần lọc theo userID
+        const classes = await Class.find()
+            .populate('lecturer', 'fullName email') // Lấy tên và email GV để hiển thị
+            .sort({ createdAt: -1 }); 
+            
+        res.json(classes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// --- ADMIN: XÓA LỚP HỌC BẤT KỲ (Bỏ qua quyền sở hữu) ---
+const deleteClassAdmin = async (req, res) => {
+    try {
+        const classItem = await Class.findById(req.params.id);
+        
+        if (!classItem) {
+            return res.status(404).json({ message: 'Không tìm thấy lớp học' });
+        }
+
+        // Tùy chọn (Rất khuyến cáo): Xóa sạch các Nhóm và Task thuộc về lớp này để tránh rác DB
+        const Project = require('../models/projectModel');
+        const Task = require('../models/taskModel');
+        
+        // Tìm tất cả các nhóm của lớp này
+        const projectsInClass = await Project.find({ class: classItem._id });
+        const projectIds = projectsInClass.map(p => p._id);
+        
+        // Xóa Task của các nhóm đó -> Xóa Nhóm -> Xóa Lớp
+        await Task.deleteMany({ project: { $in: projectIds } });
+        await Project.deleteMany({ class: classItem._id });
+        
+        // Cuối cùng xóa lớp
+        await classItem.deleteOne();
+        
+        res.json({ message: 'Đã xóa lớp học và toàn bộ dữ liệu liên quan thành công' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports ={
     createClass,
     getMyClasses,
     joinClass,
     getClassDetails,
-    approveStudent
+    approveStudent,
+    getAllClassesAdmin,
+    deleteClassAdmin
 };

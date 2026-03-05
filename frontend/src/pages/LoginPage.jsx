@@ -20,7 +20,7 @@ const LoginPage = () => {
 
       localStorage.setItem('userInfo', JSON.stringify(data));
       message.success('Đăng nhập thành công');
-      navigate('/dashboard');
+      navigate(data.role === 'admin' ? '/admin/users' : '/dashboard');
     } catch (error) {
       message.error(error.response?.data?.message || 'Đăng nhập thất bại');
     } finally {

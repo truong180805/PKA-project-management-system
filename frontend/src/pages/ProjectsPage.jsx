@@ -20,7 +20,6 @@ const ProjectsPage = () => {
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
   const isLecturer = userInfo.role === 'lecturer';
 
-  // --- 1. FETCH DATA ---
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
@@ -38,7 +37,7 @@ const ProjectsPage = () => {
     fetchProjects();
   }, [isLecturer]);
 
-  // --- 2. XỬ LÝ LỌC DỮ LIỆU ---
+
   // Lấy danh sách các lớp duy nhất để tạo Dropdown Filter
   const uniqueClasses = [...new Set(projects.map(p => p.class?.name))].filter(Boolean);
 
@@ -108,11 +107,6 @@ const ProjectsPage = () => {
       },
     },
     {
-      title: 'Điểm số',
-      key: 'score',
-      render: (_, record) => record.score !== undefined ? <Tag color="purple" style={{fontWeight: 'bold'}}>{record.score}</Tag> : <Text type="secondary">-</Text>
-    },
-    {
       title: 'Tiến độ',
       dataIndex: 'progress',
       key: 'progress',
@@ -157,7 +151,7 @@ const ProjectsPage = () => {
           <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={8}><Card size="small"><Statistic title="Tổng số nhóm (Đang lọc)" value={total} prefix={<FolderOpenOutlined />} /></Card></Col>
               <Col span={8}><Card size="small"><Statistic title="Chờ duyệt đề tài" value={pending} valueStyle={{ color: '#faad14' }} /></Card></Col>
-              <Col span={8}><Card size="small"><Statistic title="Đã chấm điểm" value={completed} valueStyle={{ color: '#3f8600' }} /></Card></Col>
+              <Col span={8}><Card size="small"><Statistic title="Đã hoàn thành" value={completed} valueStyle={{ color: '#3f8600' }} /></Card></Col>
           </Row>
       )
   }

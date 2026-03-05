@@ -70,7 +70,7 @@ const ClassLayout = () => {
       <Sider width={220} style={{ background: colorBgContainer }}>
         <div style={{ padding: '16px 16px 0 16px' }}>
              <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/classes')} style={{marginBottom: 8}}>
-                 DS Lớp
+                 Danh sách lớp
              </Button>
              <Title level={5} style={{ margin: 0 }} ellipsis={{ tooltip: classData?.name }}>
                 {classData?.name}

@@ -1,4 +1,5 @@
 const Class = require('../models/classModel');
+const User = require('../models/userModel');
 const Project = require('../models/projectModel');
 const Task = require('../models/taskModel');
 // const Assignment = require('../models/assignmentModel'); // Nếu bạn muốn thống kê thêm bài tập
@@ -80,4 +81,29 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
-module.exports = { getDashboardStats };
+const getAdminStats = async (req, res) => {
+    try {
+        const totalUsers = await User.countDocuments();
+        const totalLecturers = await User.countDocuments({ role: 'lecturer' });
+        const totalStudents = await User.countDocuments({ role: 'student' });
+        const totalClasses = await Class.countDocuments();
+        const totalProjects = await Project.countDocuments();
+        
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const newUsers = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo } });
+
+        res.json({
+            totalUsers,
+            totalLecturers,
+            totalStudents,
+            totalClasses,
+            totalProjects,
+            newUsers
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getDashboardStats, getAdminStats};

@@ -13,7 +13,7 @@ const createTask = async (req, res) => {
 
         const project = await Project.findById(projectId);
         if (!project.members.includes(req.user._id)) {
-            res.status('403').json({message: 'Bạn không phải thành viên của nhóm'});
+            res.status(403).json({message: 'Bạn không phải thành viên của nhóm'});
         }
 
         const task = await Task.create({
