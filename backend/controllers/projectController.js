@@ -64,6 +64,7 @@ const getProjectsByClass = async (req, res) => {
         const projects = await Project.find({ class: classId })
         .populate('leader', 'fullName numberPhone')
         .populate('members', 'fullName studentId avatarUrl')
+        .populate('topic', 'name description')
         .sort({createdAt: -1});
 
         res.json(projects);

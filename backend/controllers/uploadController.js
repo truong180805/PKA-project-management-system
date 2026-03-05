@@ -15,10 +15,18 @@ cloudinary.config({
 // 2. Cấu hình nơi lưu trữ (Storage)
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'devmanager_uploads', // Tên thư mục trên Cloudinary
-    allowed_formats: ['jpg', 'png', 'jpeg', 'pdf', 'doc', 'docx', 'zip', 'rar'], // Cho phép cả ảnh và tài liệu
-    resource_type: 'auto', // Tự động nhận diện (ảnh/video/raw file)
+  params: async (req, file) => {
+    // Lấy đuôi file (extension) từ tên file gốc
+    const ext = file.originalname.split('.').pop().toLowerCase();
+    
+    // Kiểm tra xem nó là ảnh hay tài liệu
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+
+    return {
+      folder: 'devmanager_uploads',
+      // NẾU LÀ ẢNH -> dùng 'image'. NẾU LÀ TÀI LIỆU (pdf, docx, zip...) -> dùng 'raw'
+      resource_type: isImage ? 'image' : 'raw', 
+    };
   },
 });
 

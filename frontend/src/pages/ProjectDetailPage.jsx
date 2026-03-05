@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Button, Divider, Progress, message, Popconfirm, Badge, Spin, List, Drawer, Tooltip, Card, Row, Col, Tag, Avatar, Modal, Form, Input, Select, DatePicker, Dropdown, theme } from 'antd'; // Thêm theme
-import { LogoutOutlined, TeamOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, LinkOutlined, PlusOutlined, ClockCircleOutlined, EllipsisOutlined, UserOutlined, GithubOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import { Typography, Upload, Button, Divider, Progress, message, Popconfirm, Badge, Spin, List, Drawer, Tooltip, Card, Row, Col, Tag, Avatar, Modal, Form, Input, Select, DatePicker, Dropdown, theme } from 'antd'; // Thêm theme
+import { LogoutOutlined, EyeOutlined, UploadOutlined, TeamOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, LinkOutlined, PlusOutlined, ClockCircleOutlined, EllipsisOutlined, UserOutlined, GithubOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../api';
 
@@ -117,6 +117,30 @@ const ProjectDetailPage = () => {
             fetchData(); // Tải lại toàn bộ
         } catch (error) {
             message.error('Lỗi xóa task');
+        }
+    };
+
+    const handleUploadFile = async (options) => {
+        const { file, onSuccess, onError } = options;
+        const formData = new FormData();
+        formData.append('file', file); // Chú ý: 'file' phải khớp với tên trong uploadRoutes.js của bạn
+
+        try {
+            message.loading({ content: 'Đang tải file lên, vui lòng chờ...', key: 'uploading' });
+            
+            // Gọi API upload (Hãy chắc chắn route trong server.js của bạn trỏ đúng vào '/upload' hoặc '/api/upload')
+            const { data } = await api.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            // Gán URL mà Cloudinary trả về vào ô input finalReportUrl của form
+            submitForm.setFieldsValue({ finalReportUrl: data.url });
+            
+            message.success({ content: 'Tải file thành công!', key: 'uploading' });
+            onSuccess("Ok");
+        } catch (error) {
+            message.error({ content: 'Lỗi tải file', key: 'uploading' });
+            onError({ error });
         }
     };
 
@@ -324,6 +348,17 @@ const ProjectDetailPage = () => {
                         )
                     )}
 
+                    {project?.finalReportUrl && (
+                        <Button 
+                            type="primary" 
+                            ghost 
+                            icon={<EyeOutlined />} 
+                            onClick={() => window.open(project.finalReportUrl, '_blank')} // Mở link ở Tab mới
+                        >
+                            Xem Báo Cáo
+                        </Button>
+                    )}
+
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTask(null); form.resetFields(); setIsTaskModalOpen(true); }}>
                         Thêm Công Việc Mới
                     </Button>
@@ -363,13 +398,39 @@ const ProjectDetailPage = () => {
                 </Form>
             </Modal>
 
-            <Modal title="Nộp Đồ Án / Báo Cáo" open={isSubmitModalOpen} onCancel={() => setIsSubmitModalOpen(false)} footer={null}>
-                {/* ... Form giống cũ */}
+            <Modal
+                title="Nộp Báo Cáo"
+                open={isSubmitModalOpen}
+                onCancel={() => setIsSubmitModalOpen(false)}
+                footer={null}
+            >
                 <Form form={submitForm} onFinish={handleSubmitProject} layout="vertical" initialValues={{ finalReportUrl: project?.finalReportUrl }}>
-                    <Form.Item name="finalReportUrl" label="Link Báo cáo (Github / Drive)" rules={[{ required: true }, { type: 'url' }]}>
+                    
+                    <Form.Item label="Cách 1: Tải file từ máy tính (PDF, ZIP, DOCX...)">
+                        <Upload 
+                            customRequest={handleUploadFile} 
+                            maxCount={1} // Chỉ cho phép up 1 file, up file khác sẽ đè lên
+                            showUploadList={{ showRemoveIcon: false }} // Ẩn nút xóa mặc định để tránh lỗi logic
+                        >
+                            <Button icon={<UploadOutlined />}>Chọn File tải lên</Button>
+                        </Upload>
+                    </Form.Item>
+
+                    <div style={{ textAlign: 'center', margin: '16px 0', color: '#bfbfbf', fontWeight: 'bold' }}>- HOẶC -</div>
+
+                    
+                    <Form.Item 
+                        name="finalReportUrl" 
+                        label="Cách 2: Link Repository (Github/Gitlab) hoặc Google Drive" 
+                        rules={[
+                            { required: true, message: 'Vui lòng tải file lên hoặc nhập link' }, 
+                            { type: 'url', message: 'Link không hợp lệ' }
+                        ]}
+                    >
                         <Input prefix={<LinkOutlined />} placeholder="https://..." />
                     </Form.Item>
-                    <Button type="primary" htmlType="submit" block>Xác nhận nộp</Button>
+                    
+                    <Button type="primary" htmlType="submit" block size="large">Xác nhận nộp</Button>
                 </Form>
             </Modal>
             <Drawer 
