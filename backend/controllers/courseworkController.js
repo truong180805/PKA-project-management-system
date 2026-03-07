@@ -36,7 +36,7 @@ const submitAssignment = async (req, res) => {
     if (sub) {
         sub.submissionUrl = submissionUrl;
         sub.note = note;
-        sub.project = projectId; // Nếu có
+        sub.project = projectId; 
         await sub.save();
     } else {
         sub = await Submission.create({
@@ -51,7 +51,7 @@ const submitAssignment = async (req, res) => {
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
-const getSubmissions = async (req, res) => { // GV xem danh sách bài nộp
+const getSubmissions = async (req, res) => { 
   try {
     const { assignmentId } = req.params;
     const list = await Submission.find({ assignment: assignmentId })
@@ -61,7 +61,7 @@ const getSubmissions = async (req, res) => { // GV xem danh sách bài nộp
   } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
-const gradeSubmission = async (req, res) => { // GV chấm điểm
+const gradeSubmission = async (req, res) => { 
     try {
         const { submissionId } = req.params;
         const { score, feedback } = req.body;
@@ -73,7 +73,7 @@ const gradeSubmission = async (req, res) => { // GV chấm điểm
         }, { new: true }).populate('assignment', 'title class');
 
         const newNotif = await Notification.create({
-            recipient: sub.submitter, // Gửi cho sinh viên nộp bài
+            recipient: sub.submitter, 
             sender: req.user._id,
             type: 'grade',
             message: `Giảng viên đã chấm điểm bài tập: ${sub.assignment.title}`,

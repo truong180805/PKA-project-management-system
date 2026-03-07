@@ -27,7 +27,7 @@ const createProject = async (req, res) => {
             description: proposedTopic.description,
             class: classId,
             createdBy: req.user._id,
-            status: 'pending' // Đề tài mới phải chờ duyệt
+            status: 'pending' 
         });
         finalTopicId = newTopic._id;
     }
@@ -44,7 +44,7 @@ const createProject = async (req, res) => {
       topic: finalTopicId,
       leader: req.user._id,
       members: [req.user._id],
-      status: 'pending' // Nhóm luôn chờ GV duyệt
+      status: 'pending' 
     });
 
     await Topic.findByIdAndUpdate(finalTopicId, {
@@ -122,7 +122,7 @@ const joinProject = async (req, res) => {
 const approveProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // Nhận 'approved' hoặc 'rejected'
+    const { status } = req.body; 
 
     // Lấy nhóm và populate luôn thông tin topic của nó
     const project = await Project.findById(id).populate('topic');
@@ -133,7 +133,6 @@ const approveProject = async (req, res) => {
     project.status = status;
     await project.save();
 
-    // LOGIC THÔNG MINH: Nếu Duyệt nhóm, tự động Duyệt luôn đề tài nhóm đó đang giữ (nếu đề tài đó đang pending)
     if (status === 'approved' && project.topic && project.topic.status === 'pending') {
         await Topic.findByIdAndUpdate(project.topic._id, { status: 'approved' });
     }
@@ -169,7 +168,7 @@ const getMyProjects = async (req, res) => {
   try {
     // Tìm các project mà user là thành viên
     const projects = await Project.find({ members: req.user._id })
-      .populate('class', 'name classCode') // Lấy thêm tên lớp để hiển thị
+      .populate('class', 'name classCode') 
       .populate('leader', 'fullName')
       .populate('members', 'fullName avatarUrl')
       .sort({ updatedAt: -1 });
@@ -192,9 +191,6 @@ const getSupervisedProjects = async (req, res) => {
       .populate('leader', 'fullName studentId')
       .populate('members', 'fullName avatarUrl')
       .sort({ updatedAt: -1 });
-
-    // (Nâng cao: Có thể tính toán % hoàn thành task ở đây nếu muốn, tạm thời ta trả về list project thô)
-    
     res.json(projects);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -228,7 +224,6 @@ const deleteProject = async (req, res) => {
             return res.status(403).json({ message: 'Bạn không có quyền xóa nhóm này' });
         }
 
-        // Nếu xóa nhóm thì phải xóa luôn các Task thuộc về nhóm này
         const Task = require('../models/taskModel');
         await Task.deleteMany({ project: project._id });
 
@@ -267,7 +262,6 @@ const handleJoinRequest = async (req, res) => {
             return res.status(403).json({ message: 'Chỉ Trưởng nhóm mới có quyền này' });
         }
 
-        // --- SỬA LỖI Ở ĐÂY: Đảm bảo lấy đúng chuỗi ID kể cả khi Frontend gửi nhầm Object ---
         const targetUserId = typeof userId === 'object' ? userId._id : userId;
 
         if (action === 'accept') {
@@ -278,10 +272,9 @@ const handleJoinRequest = async (req, res) => {
                 await project.save();
                 return res.status(400).json({ message: 'Người này đã gia nhập nhóm khác mất rồi' });
             }
-            project.members.push(targetUserId); // Cho vào nhóm
+            project.members.push(targetUserId); 
         }
 
-        // --- SỬA LỖI Ở ĐÂY: Dùng targetUserId.toString() để filter chính xác ---
         project.joinRequests = project.joinRequests.filter(id => id.toString() !== targetUserId.toString());
         await project.save();
         
@@ -313,7 +306,6 @@ const removeMember = async (req, res) => {
         project.members = project.members.filter(m => m.toString() !== memberId);
         await project.save();
 
-        // (Tùy chọn) Gỡ task của người này ra để không bị lỗi hiển thị Kanban
         const Task = require('../models/taskModel');
         await Task.updateMany({ project: projectId, assignedTo: memberId }, { $unset: { assignedTo: "" } });
 

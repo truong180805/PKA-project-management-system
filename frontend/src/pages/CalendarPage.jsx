@@ -81,8 +81,6 @@ const CalendarPage = () => {
           // Điều hướng đến trang Bài tập của lớp đó
           navigate(`/classes/${selectedEvent.classId}/assignments`);
       } else if (selectedEvent.type === 'task') {
-          // Điều hướng về dashboard project (vì task không có project ID rõ ràng trong API calendar này, 
-          // ta có thể update API sau nếu cần link chính xác vào task)
           navigate('/projects'); 
       }
       setIsModalOpen(false);

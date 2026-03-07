@@ -3,11 +3,10 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Card, Typography, Avatar, List, Tag, Spin, Empty, theme } from 'antd';
 import { UserOutlined, FileTextOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import 'dayjs/locale/vi'; // Import tiếng Việt cho dayjs (vd: "2 giờ trước")
+import 'dayjs/locale/vi'; 
 import relativeTime from 'dayjs/plugin/relativeTime';
 import api from '../../api';
 
-// Cấu hình dayjs hiển thị thời gian tương đối
 dayjs.extend(relativeTime);
 dayjs.locale('vi'); 
 

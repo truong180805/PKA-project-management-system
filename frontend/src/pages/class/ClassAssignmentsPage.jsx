@@ -83,9 +83,6 @@ const ClassAssignmentsPage = () => {
   const openSubmitModal = async (assignment) => {
       setSelectedAssignment(assignment);
       setIsSubmitModalOpen(true);
-      // Kiểm tra xem đã nộp chưa để fill form
-      // Lưu ý: API getSubmissions hiện tại dành cho GV lấy list. 
-      // Để đơn giản, ta sẽ lấy list submissions về và tìm bài của mình (cách này tạm thời, tối ưu sau)
       try {
           const { data } = await api.get(`/coursework/submissions/assignment/${assignment._id}`);
           const mySub = data.find(s => s.submitter._id === userInfo._id);

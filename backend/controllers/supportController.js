@@ -7,7 +7,6 @@ const sendSupportRequest = async (req, res) => {
     const sender = req.user; // Lấy thông tin người gửi từ middleware protect
 
     // 1. Tạo nội dung email gửi cho Admin
-    // Chúng ta sẽ format tin nhắn cho dễ đọc
     const message = `
       CÓ YÊU CẦU HỖ TRỢ MỚI TỪ HỆ THỐNG DEVMANAGER:
       ------------------------------------------------
@@ -28,7 +27,7 @@ const sendSupportRequest = async (req, res) => {
 
     // 2. Gửi email đến chính email quản trị (trong .env) hoặc email support riêng
     await sendEmail({
-      email: process.env.EMAIL_USER, // Gửi về cho chính Admin
+      email: process.env.EMAIL_USER, 
       subject: `[SUPPORT] ${subject} - từ ${sender.fullName}`,
       message: message,
     });

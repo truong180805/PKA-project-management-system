@@ -15,14 +15,13 @@ const getConversations = async (req, res) => {
 
     const conversations = [];
 
-    // Query song song
     const [classes, projects] = await Promise.all([
       isLecturer
         ? Class.find({ lecturer: userId }).select('name _id')
         : Class.find({ student: userId }).select('name _id'),
 
       isLecturer
-        ? [] // nếu muốn GV xem nhóm thì thêm query ở đây
+        ? [] 
         : Project.find({ members: userId }).select('name _id')
     ]);
 
@@ -62,7 +61,7 @@ const getMessages = async (req, res) => {
     
     const messages = await Message.find({ conversationId })
       .populate('sender', 'fullName avatarUrl role')
-      .sort({ createdAt: 1 }); // Tin cũ nhất ở trên
+      .sort({ createdAt: 1 }); 
 
     res.json(messages);
   } catch (error) {
@@ -80,7 +79,7 @@ const sendMessage = async (req, res) => {
       content,
       conversationId,
       type,
-      receiver: receiverId // Nếu là chat riêng
+      receiver: receiverId 
     });
 
     const populatedMsg = await Message.findById(newMessage._id).populate('sender', 'fullName avatarUrl');

@@ -12,8 +12,7 @@ const AdminClassesPage = () => {
     const fetchAllClasses = async () => {
         setLoading(true);
         try {
-            // Bạn cần tạo 1 API backend: GET /api/classes/admin/all
-            const { data } = await api.get(`/classes/admin/all`); // Tạm thời dùng API lấy lớp chung
+            const { data } = await api.get(`/classes/admin/all`); 
             setClasses(data);
         } catch (error) { message.error('Lỗi tải danh sách lớp'); }
         finally { setLoading(false); }
@@ -21,7 +20,7 @@ const AdminClassesPage = () => {
 
     const handleDeleteClass = async (id) => {
         try {
-            await api.delete(`/classes/admin/${id}`); // Giả sử route xóa lớp đã có
+            await api.delete(`/classes/admin/${id}`); 
             message.success('Đã xóa lớp học');
             fetchAllClasses();
         } catch (error) { message.error('Không thể xóa lớp này'); }

@@ -61,7 +61,6 @@ const ClassGradesPage = () => {
                 if (!gradeInfo?.submitted) return <Text type="secondary">-</Text>;
                 if (gradeInfo.score === undefined) return <Tag color="orange">Đã nộp</Tag>; // Chưa chấm
                 
-                // Tô màu điểm
                 let color = gradeInfo.score >= 8 ? '#3f8600' : gradeInfo.score >= 5 ? '#faad14' : '#cf1322';
                 return (
                     <Tooltip title={gradeInfo.feedback || "Chưa có nhận xét"}>

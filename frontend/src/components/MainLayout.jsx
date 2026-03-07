@@ -63,8 +63,6 @@ const MainLayout = () => {
 
     // SOCKET: Lắng nghe thông báo mới
     socket.on('receive_notification', (newNotif) => {
-        // Play sound (Optional)
-        // const audio = new Audio('/notification-sound.mp3'); audio.play();
         
         setNotifications(prev => [newNotif, ...prev]);
         setUnreadCount(prev => prev + 1);
@@ -231,7 +229,7 @@ const MainLayout = () => {
                     justifyContent: collapsed ? 'center' : 'flex-start',
                     padding: '10px 16px', 
                     cursor: 'pointer', 
-                    color: '#ff4d4f', // Màu đỏ cho nút đăng xuất
+                    color: '#ff4d4f', 
                     borderRadius: 8,
                     transition: 'all 0.3s'
                 }}

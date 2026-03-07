@@ -4,7 +4,6 @@ const projectSchema = new mongoose.Schema({
     name: { type: String, required: true},
     description: { type: String },
 
-    // connect class
     class: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Class',
@@ -13,13 +12,11 @@ const projectSchema = new mongoose.Schema({
 
     topic: { type: mongoose.Schema.Types.ObjectId, ref: 'Topic' },
 
-    //member group(student)
     members: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
 
-    //leader
     leader: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

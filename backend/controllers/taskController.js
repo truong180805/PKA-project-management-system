@@ -119,9 +119,9 @@ const updateProjectProgress = async (projectID) => {
         let newStatus = project.status;
         
         if (progress === 100 && project.status === 'approved') {
-            newStatus = 'completed'; // Xong 100% -> Hoàn thành
+            newStatus = 'completed'; 
         } else if (progress < 100 && project.status === 'completed') {
-            newStatus = 'approved'; // Bị lùi tiến độ -> Quay lại Đang thực hiện
+            newStatus = 'approved'; 
         }
 
         // Cập nhật vào Database

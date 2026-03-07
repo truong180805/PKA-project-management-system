@@ -164,9 +164,8 @@ const approveStudent = async (req, res) => {
 // --- ADMIN: LẤY TOÀN BỘ LỚP HỌC TRÊN HỆ THỐNG ---
 const getAllClassesAdmin = async (req, res) => {
     try {
-        // Lấy tất cả, không cần lọc theo userID
         const classes = await Class.find()
-            .populate('lecturer', 'fullName email') // Lấy tên và email GV để hiển thị
+            .populate('lecturer', 'fullName email') 
             .sort({ createdAt: -1 }); 
             
         res.json(classes);
@@ -184,7 +183,6 @@ const deleteClassAdmin = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy lớp học' });
         }
 
-        // Tùy chọn (Rất khuyến cáo): Xóa sạch các Nhóm và Task thuộc về lớp này để tránh rác DB
         const Project = require('../models/projectModel');
         const Task = require('../models/taskModel');
         

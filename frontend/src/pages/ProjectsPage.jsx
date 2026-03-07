@@ -75,7 +75,6 @@ const ProjectsPage = () => {
       dataIndex: ['class', 'name'],
       key: 'className',
       render: (text) => <Tag color="geekblue">{text}</Tag>,
-      // Chỉ hiện cột này nếu chưa filter theo lớp cụ thể (để đỡ rác)
       hidden: filterClass !== 'all'
     },
     {

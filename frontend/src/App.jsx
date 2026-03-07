@@ -12,7 +12,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import ProjectsPage from './pages/ProjectsPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
-import CalendarPage from './pages/calendarPage';
+import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
 import SupportPage from './pages/SupportPage';
 import InboxPage from './pages/InboxPage';

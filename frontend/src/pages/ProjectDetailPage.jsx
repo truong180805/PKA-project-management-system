@@ -11,7 +11,7 @@ const { Option } = Select;
 const ProjectDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { token } = theme.useToken(); // Lấy màu động cho Darkmode
+    const { token } = theme.useToken(); 
 
     const [isMemberDrawerOpen, setIsMemberDrawerOpen] = useState(false);
     const [project, setProject] = useState(null);
@@ -209,7 +209,6 @@ const ProjectDetailPage = () => {
 
     // Menu Dropdown của mỗi Task
     const getTaskMenuItems = (task) => {
-        // ... Code cũ giữ nguyên
         return [
             { key: 'edit', icon: <EditOutlined />, label: 'Sửa', onClick: () => openEditModal(task) },
             { type: 'divider' },
@@ -263,7 +262,6 @@ const ProjectDetailPage = () => {
     // Component Cột Kanban
     const TaskColumn = ({ title, status, color, list }) => (
         <Col span={8} style={{ height: '100%' }}>
-            {/* Sử dụng token.colorFillAlter để hỗ trợ Dark Mode thay vì cứng mã màu xám */}
             <div style={{ background: token.colorFillAlter, padding: 12, borderRadius: 8, minHeight: 500 }}>
                 <div style={{ marginBottom: 12, fontWeight: 'bold', color: token.colorTextSecondary, display: 'flex', alignItems: 'center' }}>
                     <Tag color={color} style={{ marginRight: 8 }}>{list.length}</Tag>
@@ -369,14 +367,10 @@ const ProjectDetailPage = () => {
             <Row gutter={16} style={{ flex: 1 }}>
                 <TaskColumn title="CẦN LÀM" status="todo" color="orange" list={tasks.filter(t => t.status === 'todo')} />
                 <TaskColumn title="ĐANG LÀM" status="in_progress" color="blue" list={tasks.filter(t => t.status === 'in_progress')} />
-                
-                {/* LƯU Ý QUAN TRỌNG: Ở đây bạn đang dùng 'completed'. Backend cũng phải đếm task status='completed' nhé */}
                 <TaskColumn title="HOÀN THÀNH" status="completed" color="green" list={tasks.filter(t => t.status === 'completed' || t.status === 'submitted')} />
             </Row>
 
-            {/* CÁC MODAL (Giữ nguyên) */}
             <Modal title={editingTask ? "Chỉnh sửa công việc" : "Giao việc mới"} open={isTaskModalOpen} onCancel={() => setIsTaskModalOpen(false)} footer={null}>
-                {/* ... Form giống cũ */}
                 <Form form={form} onFinish={handleSaveTask} layout="vertical">
                     <Form.Item name="title" label="Tên công việc" rules={[{ required: true }]}><Input /></Form.Item>
                     <Form.Item name="description" label="Mô tả"><Input.TextArea rows={3} /></Form.Item>
@@ -455,7 +449,7 @@ const ProjectDetailPage = () => {
                                 >
                                     <List.Item.Meta
                                         avatar={<Avatar icon={<UserOutlined />} />}
-                                        title={<Text>{reqUser.fullName}</Text>} // Ở DB thực tế bạn nên populate joinRequests để lấy tên
+                                        title={<Text>{reqUser.fullName}</Text>} 
                                     />
                                 </List.Item>
                             )}

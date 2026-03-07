@@ -9,15 +9,14 @@ const ProfilePage = () => {
   const { token } = theme.useToken();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const [avatarUrl, setAvatarUrl] = useState(''); // State lưu link ảnh mới
-  
+  const [avatarUrl, setAvatarUrl] = useState(''); 
   const [infoForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
     setUser(storedUser);
-    setAvatarUrl(storedUser.avatarUrl); // Init avatar
+    setAvatarUrl(storedUser.avatarUrl); 
     
     infoForm.setFieldsValue({
       fullName: storedUser.fullName,
@@ -31,7 +30,7 @@ const ProfilePage = () => {
   // --- XỬ LÝ UPLOAD ẢNH ---
   const handleUploadAvatar = async ({ file, onSuccess, onError }) => {
     const formData = new FormData();
-    formData.append('file', file); // 'file' phải khớp với backend upload.single('file')
+    formData.append('file', file); 
 
     try {
       message.loading({ content: 'Đang tải ảnh lên...', key: 'upload' });
@@ -75,9 +74,7 @@ const ProfilePage = () => {
     }
   };
 
-  // (Giữ nguyên logic Đổi mật khẩu cũ...)
   const handleChangePassword = async (values) => {
-    // ... Copy lại logic cũ ...
      setLoading(true);
     try {
       await api.put('/users/profile', {
@@ -178,7 +175,7 @@ const ProfilePage = () => {
     </Row>
   );
 
-  // --- TAB SECURITY (Giữ nguyên) ---
+  // --- TAB SECURITY---
   const SecurityTab = () => (
     <Row justify="center">
       <Col xs={24} md={12}>

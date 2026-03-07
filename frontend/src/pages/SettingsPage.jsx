@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Switch, Card, List, Select, message, Spin } from 'antd';
 import { BulbOutlined, GlobalOutlined, BellOutlined } from '@ant-design/icons';
-import { useTheme } from '../contexts/ThemeContext'; // Lấy hook theme
+import { useTheme } from '../contexts/ThemeContext'; 
 import api from '../api';
 
 const { Title, Text } = Typography;
 
 const SettingsPage = () => {
-  const { isDarkMode, toggleTheme } = useTheme(); // Lấy state từ Context
+  const { isDarkMode, toggleTheme } = useTheme(); 
   const [receiveEmail, setReceiveEmail] = useState(true);
   const [language, setLanguage] = useState('vi');
   const [loading, setLoading] = useState(false);
@@ -20,10 +20,7 @@ const SettingsPage = () => {
       setLanguage(savedLang);
 
       // Lấy từ DB cho Email Setting
-      // Lưu ý: Chúng ta cần lấy thông tin user mới nhất
       try {
-        // Gọi API lấy profile (nếu bạn chưa có API lấy profile riêng thì dùng localStorage tạm hoặc viết thêm API getProfile)
-        // Ở đây giả sử ta dùng localStorage để lấy setting ban đầu, nhưng chuẩn nhất là gọi API
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
         if (userInfo.settings) {
             setReceiveEmail(userInfo.settings.receiveEmail);
@@ -53,7 +50,7 @@ const SettingsPage = () => {
       message.success(`Đã ${checked ? 'bật' : 'tắt'} thông báo qua Email`);
     } catch (error) {
       message.error('Lỗi lưu cài đặt');
-      setReceiveEmail(!checked); // Revert nếu lỗi
+      setReceiveEmail(!checked); 
     } finally {
       setLoading(false);
     }
@@ -64,7 +61,6 @@ const SettingsPage = () => {
     setLanguage(value);
     localStorage.setItem('language', value);
     message.info('Thay đổi ngôn ngữ sẽ áp dụng sau khi tải lại trang (Demo)');
-    // Ở hệ thống thật, bạn sẽ dùng i18n library để đổi text ngay lập tức
   };
 
   return (

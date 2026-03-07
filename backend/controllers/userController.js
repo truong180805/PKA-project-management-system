@@ -36,7 +36,7 @@ const registerUser = async (req, res) => {
       password,
       numberPhone,
       role,
-      studentId: role === 'student' ? studentId : undefined // Chỉ lưu MSSV nếu là SV
+      studentId: role === 'student' ? studentId : undefined 
     });
 
     if (user) {
@@ -94,16 +94,14 @@ const updateUserProfile = async (req, res) => {
       if (req.body.avatarUrl !== undefined) {
         user.avatarUrl = req.body.avatarUrl;
         }
-      // Các trường khác (Class, Major, Department) tùy bạn có muốn cho sửa không
       if (req.body.className) user.className = req.body.className;
       if (req.body.major) user.major = req.body.major;
       if (req.body.department) user.department = req.body.department;
-      // Lưu ý: Không cho sửa Email, Role, StudentId ở đây để bảo toàn dữ liệu hệ thống
 
       if (req.body.settings) {
           user.settings = {
-              ...user.settings, // Giữ lại các setting cũ
-              ...req.body.settings // Ghi đè setting mới
+              ...user.settings, 
+              ...req.body.settings 
           };
       }
 
@@ -164,8 +162,6 @@ const forgotPassword = async (req, res) => {
 
     await user.save({ validateBeforeSave: false }); // Lưu lại token vào DB
 
-    // Tạo URL reset (Frontend URL)
-    // Lưu ý: Port 5173 là của Vite Frontend
     const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
 
     const message = `Bạn nhận được email này vì đã yêu cầu đặt lại mật khẩu.\n\nVui lòng truy cập đường dẫn sau để đặt lại mật khẩu (Link hết hạn sau 10 phút):\n\n${resetUrl}\n\nNếu bạn không yêu cầu, vui lòng bỏ qua email này.`;
@@ -216,7 +212,7 @@ const resetPassword = async (req, res) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
 
-    await user.save(); // Middleware pre-save sẽ tự hash password mới
+    await user.save(); 
 
     res.status(200).json({ success: true, data: 'Cập nhật mật khẩu thành công!' });
   } catch (error) {
@@ -226,7 +222,6 @@ const resetPassword = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
     try {
-        // Có thể thêm tính năng tìm kiếm hoặc lọc theo role
         const keyword = req.query.keyword ? {
             $or: [
                 { fullName: { $regex: req.query.keyword, $options: 'i' } },
@@ -245,7 +240,6 @@ const updateUserRole = async (req, res) => {
         if (!user) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
 
         user.role = req.body.role || user.role;
-        // Có thể sửa thêm các trường khác nếu cần
         
         const updatedUser = await user.save();
         res.json({ message: 'Cập nhật thành công', user: updatedUser });

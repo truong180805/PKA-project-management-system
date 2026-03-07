@@ -50,7 +50,6 @@ const ClassGroupsPage = () => {
   // --- SINH VIÊN: TẠO NHÓM ---
   const handleCreateGroup = async (values) => {
     try {
-      // Chuẩn bị payload theo đúng chuẩn Backend vừa viết
       const payload = {
         name: values.groupName,
         description: values.groupDesc,

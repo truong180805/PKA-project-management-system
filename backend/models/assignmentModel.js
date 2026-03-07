@@ -10,10 +10,8 @@ const assignmentSchema = new mongoose.Schema({
     required: true 
   },
 
-  // Hạn nộp
   dueDate: { type: Date, required: true },
 
-  // Tài liệu đính kèm đề bài (nếu có)
   attachmentUrl: { type: String },
 
 }, { timestamps: true });

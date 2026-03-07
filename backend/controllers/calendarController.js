@@ -21,20 +21,18 @@ const getCalendarEvents = async (req, res) => {
     assignments.forEach(ass => {
         events.push({
             id: ass._id,
-            title: isLecturer ? `[Thu bài] ${ass.title}` : `[Nộp bài] ${ass.title}`, // Đổi tiêu đề cho hợp vai
+            title: isLecturer ? `[Thu bài] ${ass.title}` : `[Nộp bài] ${ass.title}`, 
             start: ass.dueDate,
             end: ass.dueDate,
             type: 'assignment',
-            classId: ass.class?._id, // <--- QUAN TRỌNG ĐỂ LỌC
+            classId: ass.class?._id, 
             className: ass.class?.name,
             description: ass.description,
-            color: '#cf1322' // Màu đỏ cho deadline
+            color: '#cf1322' 
         });
     });
 
     // --- 3. LẤY DEADLINE TASK (CHỈ DÀNH CHO SV) ---
-    // GV thường không quan tâm task nhỏ lẻ của từng nhóm, trừ khi muốn xem chi tiết
-    // Ở đây ta chỉ trả task cho SV để lịch GV đỡ rác
     if (!isLecturer) {
         const tasks = await Task.find({ assignedTo: userId })
             .populate('project', 'name');
@@ -49,7 +47,7 @@ const getCalendarEvents = async (req, res) => {
                     type: 'task',
                     projectName: task.project?.name,
                     description: task.description,
-                    color: '#1890ff' // Màu xanh cho task
+                    color: '#1890ff' 
                 });
             }
         });

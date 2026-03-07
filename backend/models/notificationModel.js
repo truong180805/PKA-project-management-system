@@ -16,7 +16,7 @@ const notificationSchema = new mongoose.Schema({
     default: 'system' 
   },
   message: { type: String, required: true },
-  link: { type: String }, // Đường dẫn khi click vào (VD: /classes/123/grades)
+  link: { type: String }, 
   isRead: { type: Boolean, default: false }
 }, { timestamps: true });
 

@@ -109,8 +109,6 @@ const ClassLayout = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          {/* Đây là nơi các trang con (Stream, Assignments...) sẽ hiển thị */}
-          {/* Truyền classData xuống các con để không phải gọi API lại */}
           <Outlet context={{ classData, refetchClass: fetchClassInfo }} /> 
         </Content>
       </Layout>

@@ -8,7 +8,7 @@ const { Title, Text } = Typography;
 
 const ResetPasswordPage = () => {
   const [loading, setLoading] = useState(false);
-  const { token } = useParams(); // Lấy token từ URL
+  const { token } = useParams(); 
   const navigate = useNavigate();
 
   const onFinish = async (values) => {

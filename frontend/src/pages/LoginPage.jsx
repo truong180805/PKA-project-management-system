@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, Alert } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'; // Dùng Mail icon
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'; 
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -14,7 +14,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const { data } = await api.post('/users/login', {
-        email: values.email, // Gửi email
+        email: values.email, 
         password: values.password
       });
 
